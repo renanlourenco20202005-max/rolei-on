@@ -1,18 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft, BarChart3, Image as ImageIcon, Megaphone, CalendarPlus,
-  Eye, MousePointerClick, MapPin, MessageCircle, Plus, Trash2, Upload, Save, Sparkles, Store,
+  Eye, MousePointerClick, MapPin, MessageCircle, Plus, Trash2, Upload, Save,
+  Sparkles, Store, LogOut, Loader2,
 } from "lucide-react";
-import { usePartner, savePartner, fileToDataUrl, type PartnerPromo, type PartnerEvent } from "@/lib/partner";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { images } from "@/lib/data";
+import { getPartnerProfile, savePartnerProfile, type PartnerProfileInput } from "@/lib/partner.functions";
 
-export const Route = createFileRoute("/partner")({
+export const Route = createFileRoute("/_authenticated/partner")({
   head: () => ({ meta: [{ title: "Painel parceiro — Rolei" }] }),
   component: PartnerPanel,
+  errorComponent: ({ error }) => (
+    <div className="grid min-h-screen place-items-center px-6 text-center text-sm text-muted-foreground">
+      Não foi possível carregar o painel: {error.message}
+    </div>
+  ),
 });
 
 type Tab = "metrics" | "profile" | "photos" | "promos" | "events";
-
 const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
   { id: "metrics", label: "Métricas", icon: BarChart3 },
   { id: "profile", label: "Perfil", icon: Store },
@@ -21,9 +31,68 @@ const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
   { id: "events", label: "Eventos", icon: CalendarPlus },
 ];
 
+interface Promo {
+  id: string; title: string; description: string; validUntil: string; active: boolean;
+}
+interface EventItem {
+  id: string; title: string; date: string; free: boolean; price: string; description: string;
+}
+
+function emptyProfile(): PartnerProfileInput {
+  return {
+    name: "", category: "Bar", description: "", address: "", hours: "",
+    whatsapp: "", instagram: "", cover: "", photos: [], promos: [], events: [],
+  };
+}
+
 function PartnerPanel() {
-  const partner = usePartner();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fetchProfile = useServerFn(getPartnerProfile);
+  const saveProfile = useServerFn(savePartnerProfile);
   const [tab, setTab] = useState<Tab>("metrics");
+
+  const { data: row, isLoading } = useQuery({
+    queryKey: ["partner-profile"],
+    queryFn: () => fetchProfile(),
+  });
+
+  const profile: PartnerProfileInput = row
+    ? {
+        name: row.name ?? "",
+        category: row.category ?? "Bar",
+        description: row.description ?? "",
+        address: row.address ?? "",
+        hours: row.hours ?? "",
+        whatsapp: row.whatsapp ?? "",
+        instagram: row.instagram ?? "",
+        cover: row.cover ?? "",
+        photos: (row.photos as string[]) ?? [],
+        promos: (row.promos as unknown as Promo[]) ?? [],
+        events: (row.events as unknown as EventItem[]) ?? [],
+      }
+    : emptyProfile();
+
+  const mutation = useMutation({
+    mutationFn: (next: PartnerProfileInput) => saveProfile({ data: next }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["partner-profile"] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao salvar"),
+  });
+
+  const save = (next: PartnerProfileInput) => mutation.mutate(next);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell shadow-card min-h-screen bg-background">
@@ -35,13 +104,25 @@ function PartnerPanel() {
           <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
             Painel parceiro
           </span>
-          <div className="w-9" />
+          <button
+            onClick={logout}
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/15 backdrop-blur"
+            aria-label="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <img src={partner.cover} alt="" className="h-14 w-14 rounded-2xl object-cover ring-2 ring-white/40" />
+          <img
+            src={profile.cover || images.bar1}
+            alt=""
+            className="h-14 w-14 rounded-2xl object-cover ring-2 ring-white/40"
+          />
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{partner.category}</p>
-            <h1 className="truncate text-xl font-extrabold">{partner.name}</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{profile.category}</p>
+            <h1 className="truncate text-xl font-extrabold">
+              {profile.name || "Meu estabelecimento"}
+            </h1>
           </div>
         </div>
       </header>
@@ -68,19 +149,18 @@ function PartnerPanel() {
 
       <main className="px-5 py-5 pb-16">
         {tab === "metrics" && <MetricsTab />}
-        {tab === "profile" && <ProfileTab />}
-        {tab === "photos" && <PhotosTab />}
-        {tab === "promos" && <PromosTab />}
-        {tab === "events" && <EventsTab />}
+        {tab === "profile" && <ProfileTab profile={profile} onSave={save} saving={mutation.isPending} />}
+        {tab === "photos" && <PhotosTab profile={profile} onSave={save} />}
+        {tab === "promos" && <PromosTab profile={profile} onSave={save} />}
+        {tab === "events" && <EventsTab profile={profile} onSave={save} />}
       </main>
     </div>
   );
 }
 
-/* -------- Métricas -------- */
+/* -------- Métricas (mock, pronto p/ trocar por dados reais) -------- */
 function MetricsTab() {
-  const p = usePartner();
-  const m = p.metrics;
+  const m = useMockMetrics();
   const max = Math.max(...m.history.map((h) => h.views));
   const stats = [
     { label: "Visualizações", value: m.views, icon: Eye, color: "bg-primary/10 text-primary" },
@@ -97,7 +177,6 @@ function MetricsTab() {
         <p className="mt-1.5 text-4xl font-extrabold">{m.views.toLocaleString("pt-BR")}</p>
         <p className="text-xs opacity-80">visualizações no seu perfil</p>
       </div>
-
       <div className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl bg-card p-4 shadow-card">
@@ -109,7 +188,6 @@ function MetricsTab() {
           </div>
         ))}
       </div>
-
       <div className="rounded-3xl bg-card p-5 shadow-card">
         <h3 className="text-sm font-bold">Desempenho diário</h3>
         <p className="text-xs text-muted-foreground">Visualizações vs cliques</p>
@@ -129,7 +207,6 @@ function MetricsTab() {
           <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-secondary" /> Cliques</span>
         </div>
       </div>
-
       <div className="rounded-3xl bg-secondary p-5 text-secondary-foreground">
         <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Plano Destaque</p>
         <h3 className="mt-1 text-lg font-extrabold">Apareça 3x mais nas buscas.</h3>
@@ -144,17 +221,37 @@ function MetricsTab() {
   );
 }
 
+function useMockMetrics() {
+  const [m] = useState(() => {
+    const today = new Date();
+    const history = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return {
+        date: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        views: 180 + Math.round(Math.random() * 220),
+        clicks: 40 + Math.round(Math.random() * 90),
+      };
+    });
+    return {
+      views: history.reduce((a, b) => a + b.views, 0),
+      clicks: history.reduce((a, b) => a + b.clicks, 0),
+      routes: 184,
+      whatsapp: 97,
+      history,
+    };
+  });
+  return m;
+}
+
 /* -------- Perfil -------- */
-function ProfileTab() {
-  const partner = usePartner();
-  const [form, setForm] = useState(partner);
-  const [saved, setSaved] = useState(false);
-  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm({ ...form, [k]: v });
-  const submit = () => {
-    savePartner(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  };
+function ProfileTab({
+  profile, onSave, saving,
+}: { profile: PartnerProfileInput; onSave: (p: PartnerProfileInput) => void; saving: boolean }) {
+  const [form, setForm] = useState(profile);
+  useEffect(() => setForm(profile), [profile]);
+  const set = <K extends keyof PartnerProfileInput>(k: K, v: PartnerProfileInput[K]) =>
+    setForm({ ...form, [k]: v });
   return (
     <div className="space-y-4">
       <Field label="Nome do estabelecimento" value={form.name} onChange={(v) => set("name", v)} />
@@ -167,10 +264,12 @@ function ProfileTab() {
         <Field label="Instagram" value={form.instagram} onChange={(v) => set("instagram", v)} />
       </div>
       <button
-        onClick={submit}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-glow"
+        onClick={() => { onSave(form); toast.success("Perfil atualizado"); }}
+        disabled={saving}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-60"
       >
-        <Save className="h-4 w-4" /> {saved ? "Salvo!" : "Salvar alterações"}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        Salvar alterações
       </button>
     </div>
   );
@@ -184,15 +283,12 @@ function Field({
       <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
       {textarea ? (
         <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
+          value={value} onChange={(e) => onChange(e.target.value)} rows={3}
           className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
         />
       ) : (
         <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={value} onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
         />
       )}
@@ -201,17 +297,25 @@ function Field({
 }
 
 /* -------- Fotos -------- */
-function PhotosTab() {
-  const partner = usePartner();
+function PhotosTab({ profile, onSave }: { profile: PartnerProfileInput; onSave: (p: PartnerProfileInput) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const onUpload = async (files: FileList | null) => {
     if (!files) return;
-    const urls = await Promise.all(Array.from(files).slice(0, 6).map(fileToDataUrl));
-    savePartner({ ...partner, photos: [...urls, ...partner.photos].slice(0, 12) });
+    const urls = await Promise.all(
+      Array.from(files).slice(0, 6).map(
+        (f) => new Promise<string>((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(String(r.result));
+          r.onerror = rej;
+          r.readAsDataURL(f);
+        }),
+      ),
+    );
+    const photos = [...urls, ...profile.photos].slice(0, 12);
+    onSave({ ...profile, photos, cover: profile.cover || photos[0] || "" });
   };
-  const remove = (i: number) =>
-    savePartner({ ...partner, photos: partner.photos.filter((_, idx) => idx !== i) });
-  const setCover = (src: string) => savePartner({ ...partner, cover: src });
+  const remove = (i: number) => onSave({ ...profile, photos: profile.photos.filter((_, idx) => idx !== i) });
+  const setCover = (src: string) => onSave({ ...profile, cover: src });
   return (
     <div className="space-y-4">
       <button
@@ -222,60 +326,48 @@ function PhotosTab() {
         <span className="text-sm font-bold">Enviar novas fotos</span>
         <span className="text-[11px] text-muted-foreground">JPG ou PNG · até 6 por vez</span>
       </button>
-      <input
-        ref={ref} type="file" accept="image/*" multiple hidden
-        onChange={(e) => onUpload(e.target.files)}
-      />
-
+      <input ref={ref} type="file" accept="image/*" multiple hidden onChange={(e) => onUpload(e.target.files)} />
       <div className="grid grid-cols-2 gap-3">
-        {partner.photos.map((src, i) => (
+        {profile.photos.map((src, i) => (
           <div key={i} className="group relative overflow-hidden rounded-2xl shadow-card">
             <img src={src} alt={`Foto ${i + 1}`} className="h-36 w-full object-cover" />
-            {src === partner.cover && (
+            {src === profile.cover && (
               <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
                 Capa
               </span>
             )}
             <div className="absolute inset-x-0 bottom-0 flex gap-1.5 bg-gradient-to-t from-black/70 to-transparent p-2">
-              <button
-                onClick={() => setCover(src)}
-                className="flex-1 rounded-lg bg-white/90 py-1 text-[10px] font-bold text-secondary"
-              >
+              <button onClick={() => setCover(src)} className="flex-1 rounded-lg bg-white/90 py-1 text-[10px] font-bold text-secondary">
                 Definir capa
               </button>
-              <button
-                onClick={() => remove(i)}
-                className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/90 text-destructive-foreground"
-              >
+              <button onClick={() => remove(i)} className="grid h-7 w-7 place-items-center rounded-lg bg-destructive/90 text-destructive-foreground">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         ))}
+        {profile.photos.length === 0 && (
+          <p className="col-span-2 rounded-2xl bg-muted py-6 text-center text-xs text-muted-foreground">
+            Nenhuma foto adicionada.
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
 /* -------- Promoções -------- */
-function PromosTab() {
-  const partner = usePartner();
-  const [draft, setDraft] = useState<PartnerPromo>({
-    id: "", title: "", description: "", validUntil: "", active: true,
-  });
+function PromosTab({ profile, onSave }: { profile: PartnerProfileInput; onSave: (p: PartnerProfileInput) => void }) {
+  const [draft, setDraft] = useState<Promo>({ id: "", title: "", description: "", validUntil: "", active: true });
   const add = () => {
     if (!draft.title.trim()) return;
-    const promo = { ...draft, id: crypto.randomUUID() };
-    savePartner({ ...partner, promos: [promo, ...partner.promos] });
+    onSave({ ...profile, promos: [{ ...draft, id: crypto.randomUUID() }, ...profile.promos] });
     setDraft({ id: "", title: "", description: "", validUntil: "", active: true });
   };
   const toggle = (id: string) =>
-    savePartner({
-      ...partner,
-      promos: partner.promos.map((p) => (p.id === id ? { ...p, active: !p.active } : p)),
-    });
+    onSave({ ...profile, promos: profile.promos.map((p) => p.id === id ? { ...p, active: !p.active } : p) });
   const remove = (id: string) =>
-    savePartner({ ...partner, promos: partner.promos.filter((p) => p.id !== id) });
+    onSave({ ...profile, promos: profile.promos.filter((p) => p.id !== id) });
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-card p-4 shadow-card">
@@ -284,20 +376,16 @@ function PromosTab() {
           <Field label="Título" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} />
           <Field label="Descrição" value={draft.description} onChange={(v) => setDraft({ ...draft, description: v })} textarea />
           <Field label="Válido até" value={draft.validUntil} onChange={(v) => setDraft({ ...draft, validUntil: v })} />
-          <button
-            onClick={add}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-promo py-3 text-sm font-bold text-promo-foreground"
-          >
+          <button onClick={add} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-promo py-3 text-sm font-bold text-promo-foreground">
             <Plus className="h-4 w-4" /> Publicar promoção
           </button>
         </div>
       </div>
-
       <div className="space-y-3">
         <h3 className="px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Promoções ativas ({partner.promos.length})
+          Promoções ativas ({profile.promos.length})
         </h3>
-        {partner.promos.map((p) => (
+        {profile.promos.map((p) => (
           <div key={p.id} className="rounded-2xl bg-card p-4 shadow-card">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -309,34 +397,24 @@ function PromosTab() {
                   </p>
                 )}
               </div>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  p.active ? "bg-promo/15 text-promo" : "bg-muted text-muted-foreground"
-                }`}
-              >
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                p.active ? "bg-promo/15 text-promo" : "bg-muted text-muted-foreground"
+              }`}>
                 {p.active ? "Ativa" : "Pausada"}
               </span>
             </div>
             <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => toggle(p.id)}
-                className="flex-1 rounded-xl bg-muted py-2 text-xs font-bold"
-              >
+              <button onClick={() => toggle(p.id)} className="flex-1 rounded-xl bg-muted py-2 text-xs font-bold">
                 {p.active ? "Pausar" : "Ativar"}
               </button>
-              <button
-                onClick={() => remove(p.id)}
-                className="grid h-9 w-9 place-items-center rounded-xl bg-destructive/10 text-destructive"
-              >
+              <button onClick={() => remove(p.id)} className="grid h-9 w-9 place-items-center rounded-xl bg-destructive/10 text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         ))}
-        {partner.promos.length === 0 && (
-          <p className="rounded-2xl bg-muted py-6 text-center text-xs text-muted-foreground">
-            Nenhuma promoção publicada.
-          </p>
+        {profile.promos.length === 0 && (
+          <p className="rounded-2xl bg-muted py-6 text-center text-xs text-muted-foreground">Nenhuma promoção publicada.</p>
         )}
       </div>
     </div>
@@ -344,20 +422,15 @@ function PromosTab() {
 }
 
 /* -------- Eventos -------- */
-function EventsTab() {
-  const partner = usePartner();
-  const [draft, setDraft] = useState<PartnerEvent>({
-    id: "", title: "", date: "", free: true, price: "", description: "",
-  });
+function EventsTab({ profile, onSave }: { profile: PartnerProfileInput; onSave: (p: PartnerProfileInput) => void }) {
+  const [draft, setDraft] = useState<EventItem>({ id: "", title: "", date: "", free: true, price: "", description: "" });
   const add = () => {
     if (!draft.title.trim()) return;
-    const ev = { ...draft, id: crypto.randomUUID() };
-    savePartner({ ...partner, events: [ev, ...partner.events] });
+    onSave({ ...profile, events: [{ ...draft, id: crypto.randomUUID() }, ...profile.events] });
     setDraft({ id: "", title: "", date: "", free: true, price: "", description: "" });
   };
   const remove = (id: string) =>
-    savePartner({ ...partner, events: partner.events.filter((e) => e.id !== id) });
-
+    onSave({ ...profile, events: profile.events.filter((e) => e.id !== id) });
   return (
     <div className="space-y-5">
       <div className="rounded-3xl bg-card p-4 shadow-card">
@@ -369,8 +442,7 @@ function EventsTab() {
           <div className="flex items-center gap-3 rounded-2xl bg-muted px-4 py-3">
             <label className="flex items-center gap-2 text-xs font-bold">
               <input
-                type="checkbox"
-                checked={draft.free}
+                type="checkbox" checked={draft.free}
                 onChange={(e) => setDraft({ ...draft, free: e.target.checked, price: e.target.checked ? "" : draft.price })}
                 className="h-4 w-4 accent-primary"
               />
@@ -379,34 +451,28 @@ function EventsTab() {
             {!draft.free && (
               <input
                 placeholder="R$ 40"
-                value={draft.price}
+                value={draft.price ?? ""}
                 onChange={(e) => setDraft({ ...draft, price: e.target.value })}
                 className="flex-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs"
               />
             )}
           </div>
-          <button
-            onClick={add}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-glow"
-          >
+          <button onClick={add} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-glow">
             <CalendarPlus className="h-4 w-4" /> Publicar evento
           </button>
         </div>
       </div>
-
       <div className="space-y-3">
         <h3 className="px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Próximos eventos ({partner.events.length})
+          Próximos eventos ({profile.events.length})
         </h3>
-        {partner.events.map((e) => (
+        {profile.events.map((e) => (
           <div key={e.id} className="rounded-2xl bg-card p-4 shadow-card">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary">{e.date}</p>
                 <p className="mt-1 text-sm font-bold">{e.title}</p>
-                {e.description && (
-                  <p className="mt-1 text-xs text-muted-foreground">{e.description}</p>
-                )}
+                {e.description && <p className="mt-1 text-xs text-muted-foreground">{e.description}</p>}
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                 e.free ? "bg-promo/15 text-promo" : "bg-accent text-accent-foreground"
@@ -414,18 +480,13 @@ function EventsTab() {
                 {e.free ? "Grátis" : e.price}
               </span>
             </div>
-            <button
-              onClick={() => remove(e.id)}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-destructive/10 py-2 text-xs font-bold text-destructive"
-            >
+            <button onClick={() => remove(e.id)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-destructive/10 py-2 text-xs font-bold text-destructive">
               <Trash2 className="h-3.5 w-3.5" /> Remover
             </button>
           </div>
         ))}
-        {partner.events.length === 0 && (
-          <p className="rounded-2xl bg-muted py-6 text-center text-xs text-muted-foreground">
-            Nenhum evento publicado.
-          </p>
+        {profile.events.length === 0 && (
+          <p className="rounded-2xl bg-muted py-6 text-center text-xs text-muted-foreground">Nenhum evento publicado.</p>
         )}
       </div>
     </div>
