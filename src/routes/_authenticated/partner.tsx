@@ -35,7 +35,7 @@ interface Promo {
   id: string; title: string; description: string; validUntil: string; active: boolean;
 }
 interface EventItem {
-  id: string; title: string; date: string; free: boolean; price?: string; description: string;
+  id: string; title: string; date: string; free: boolean; price: string; description: string;
 }
 
 function emptyProfile(): PartnerProfileInput {
@@ -68,8 +68,8 @@ function PartnerPanel() {
         instagram: row.instagram ?? "",
         cover: row.cover ?? "",
         photos: (row.photos as string[]) ?? [],
-        promos: (row.promos as Promo[]) ?? [],
-        events: (row.events as EventItem[]) ?? [],
+        promos: (row.promos as unknown as Promo[]) ?? [],
+        events: (row.events as unknown as EventItem[]) ?? [],
       }
     : emptyProfile();
 
