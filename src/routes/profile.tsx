@@ -59,7 +59,7 @@ function Profile() {
         <div className="overflow-hidden rounded-3xl bg-card shadow-card">
           <Item icon={Clock} label="Histórico de rolês" badge="12" />
           <Item icon={Heart} label="Salvos" to="/favorites" />
-          <Item icon={Store} label="Sou parceiro Rolei" badge="Novo" highlight />
+          <Item icon={Store} label="Sou parceiro Rolei" to="/partner" badge="Novo" highlight />
           <Item icon={Settings} label="Configurações" />
         </div>
       </section>
@@ -71,9 +71,9 @@ function Profile() {
           <p className="mt-2 text-xs text-secondary-foreground/70">
             Edite seu perfil, publique promoções, crie eventos e acompanhe visualizações, cliques no WhatsApp e abertura de rota.
           </p>
-          <button className="mt-4 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-glow">
+          <Link to="/partner" className="mt-4 inline-block rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-glow">
             Acessar painel
-          </button>
+          </Link>
         </div>
       </section>
 
