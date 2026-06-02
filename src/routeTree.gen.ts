@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as FavoritesRouteImport } from './routes/favorites'
@@ -26,6 +27,11 @@ const SearchRoute = SearchRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof FavoritesRoute
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/place/$id': typeof PlaceIdRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/favorites': typeof FavoritesRoute
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/place/$id': typeof PlaceIdRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/favorites': typeof FavoritesRoute
   '/home': typeof HomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/partner': typeof PartnerRoute
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/place/$id': typeof PlaceIdRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/home'
     | '/onboarding'
+    | '/partner'
     | '/profile'
     | '/search'
     | '/place/$id'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/home'
     | '/onboarding'
+    | '/partner'
     | '/profile'
     | '/search'
     | '/place/$id'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/home'
     | '/onboarding'
+    | '/partner'
     | '/profile'
     | '/search'
     | '/place/$id'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   FavoritesRoute: typeof FavoritesRoute
   HomeRoute: typeof HomeRoute
   OnboardingRoute: typeof OnboardingRoute
+  PartnerRoute: typeof PartnerRoute
   ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
   PlaceIdRoute: typeof PlaceIdRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritesRoute: FavoritesRoute,
   HomeRoute: HomeRoute,
   OnboardingRoute: OnboardingRoute,
+  PartnerRoute: PartnerRoute,
   ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
   PlaceIdRoute: PlaceIdRoute,
