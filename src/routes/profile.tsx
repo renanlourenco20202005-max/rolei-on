@@ -59,7 +59,7 @@ function Profile() {
         <div className="overflow-hidden rounded-3xl bg-card shadow-card">
           <Item icon={Clock} label="Histórico de rolês" badge="12" />
           <Item icon={Heart} label="Salvos" to="/favorites" />
-          <Item icon={Store} label="Sou parceiro Rolei" badge="Novo" highlight />
+          <Item icon={Store} label="Sou parceiro Rolei" to="/partner" badge="Novo" highlight />
           <Item icon={Settings} label="Configurações" />
         </div>
       </section>
