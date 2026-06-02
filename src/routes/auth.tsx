@@ -130,6 +130,13 @@ function AuthPage() {
             )}
             <FormField icon={Mail} type="email" placeholder="email@exemplo.com" value={email} onChange={setEmail} />
             <FormField icon={Lock} type="password" placeholder="Senha (mín. 8)" value={password} onChange={setPassword} />
+            {mode === "signin" && (
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs font-bold text-primary">
+                  Esqueci a senha
+                </Link>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}
