@@ -41,7 +41,7 @@ function Profile() {
             <Sparkles className="h-3.5 w-3.5" /> Suas preferências
           </div>
           <dl className="mt-3 space-y-2 text-sm">
-            <Row label="Companhia" value={prefs.company ?? "—"} />
+            <Row label="Companhia" value={prefs.company?.length ? prefs.company.join(", ") : "—"} />
             <Row label="Gosta de" value={prefs.likes.length ? prefs.likes.join(", ") : "—"} />
             <Row label="Orçamento" value={prefs.budget ?? "—"} />
           </dl>

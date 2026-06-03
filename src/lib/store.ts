@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export interface Prefs {
-  company?: string;
+  company?: string[];
   likes: string[];
   budget?: string;
   onboarded?: boolean;

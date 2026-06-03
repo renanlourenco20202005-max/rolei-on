@@ -42,9 +42,9 @@ function Home() {
           O que fazer{" "}
           <span className="bg-gradient-hero bg-clip-text text-transparent">hoje?</span>
         </h1>
-        {prefs.company && (
+        {prefs.company && prefs.company.length > 0 && (
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Selecionado pra um rolê em {prefs.company.toLowerCase()}.
+            Selecionado pra um rolê em {prefs.company.map(c => c.toLowerCase()).join(" e ")}.
           </p>
         )}
       </header>
