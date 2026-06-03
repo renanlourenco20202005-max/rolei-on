@@ -18,17 +18,38 @@ function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const sendReset = async (targetEmail: string) => {
+    const safeEmail = emailSchema.parse(targetEmail);
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(safeEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
+    setSent(true);
+    toast.success("Link enviado! Verifique seu email.");
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const safeEmail = emailSchema.parse(email);
-      setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(safeEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      setSent(true);
-      toast.success("Link enviado! Verifique seu email.");
+      await sendReset(email);
+    } catch (err) {
+      const message =
+        err instanceof z.ZodError
+          ? err.issues[0]?.message ?? "Dados inválidos"
+          : err instanceof Error
+            ? err.message
+            : "Erro inesperado";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resend = async () => {
+    try {
+      await sendReset(email);
+      toast.success("Novo link de recuperação enviado!");
     } catch (err) {
       const message =
         err instanceof z.ZodError
@@ -69,9 +90,20 @@ function ForgotPasswordPage() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Verifique sua caixa de entrada (e a pasta de spam) e siga as instruções do email.
               </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Enviado para: <span className="font-medium text-foreground">{email}</span>
+              </p>
+              <button
+                onClick={resend}
+                disabled={loading}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-2xl border border-border px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-accent disabled:opacity-60"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Reenviar link
+              </button>
               <button
                 onClick={() => navigate({ to: "/auth" })}
-                className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-primary"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary"
               >
                 Voltar para o login <ArrowRight className="h-4 w-4" />
               </button>
