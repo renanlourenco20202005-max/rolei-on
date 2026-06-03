@@ -12,7 +12,8 @@ const steps = [
   {
     key: "company",
     title: "Com quem você costuma sair?",
-    multi: false,
+    subtitle: "Escolha quantos quiser",
+    multi: true,
     options: ["Casal", "Amigos", "Família", "Sozinho"],
   },
   {
@@ -33,7 +34,7 @@ const steps = [
 function Onboarding() {
   const navigate = useNavigate();
   const [stepIdx, setStepIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({ likes: [] });
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({ company: [], likes: [] });
   const step = steps[stepIdx];
   const value = answers[step.key];
   const canContinue = step.multi ? Array.isArray(value) && value.length > 0 : Boolean(value);
@@ -53,7 +54,7 @@ function Onboarding() {
       setStepIdx(stepIdx + 1);
     } else {
       savePrefs({
-        company: answers.company as string,
+        company: (answers.company as string[]) ?? [],
         likes: (answers.likes as string[]) ?? [],
         budget: answers.budget as string,
         onboarded: true,
