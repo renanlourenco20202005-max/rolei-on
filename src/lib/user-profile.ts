@@ -19,7 +19,7 @@ export async function pushPrefsToCloud(prefs: Prefs) {
   if (!u.user) return;
   await supabase
     .from("user_profiles")
-    .update({ prefs: prefs as unknown as Record<string, unknown>, onboarded: !!prefs.onboarded })
+    .update({ prefs: JSON.parse(JSON.stringify(prefs)), onboarded: !!prefs.onboarded })
     .eq("user_id", u.user.id);
 }
 
