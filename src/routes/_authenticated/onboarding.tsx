@@ -49,11 +49,11 @@ function Onboarding() {
     });
   };
 
-  const next = () => {
+  const next = async () => {
     if (stepIdx < steps.length - 1) {
       setStepIdx(stepIdx + 1);
     } else {
-      savePrefs({
+      await savePrefsEverywhere({
         company: (answers.company as string[]) ?? [],
         likes: (answers.likes as string[]) ?? [],
         budget: answers.budget as string,
