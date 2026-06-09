@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { getPrefs } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { syncPrefsFromCloud } from "@/lib/user-profile";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Rolei — Descubra o que fazer hoje" }] }),
@@ -11,11 +13,20 @@ export const Route = createFileRoute("/")({
 function Splash() {
   const navigate = useNavigate();
   useEffect(() => {
-    const t = setTimeout(() => {
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!data.user) {
+        navigate({ to: "/login", replace: true });
+        return;
+      }
+      await syncPrefsFromCloud();
+      if (cancelled) return;
       const p = getPrefs();
-      if (p.onboarded) navigate({ to: "/home" });
+      navigate({ to: p.onboarded ? "/home" : "/onboarding", replace: true });
     }, 1200);
-    return () => clearTimeout(t);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [navigate]);
 
   return (
