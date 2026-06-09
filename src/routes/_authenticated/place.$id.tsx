@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-ro
 import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle, Navigation, Calendar, Tag } from "lucide-react";
 import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
+import { RouteErrorFallback, RouteNotFoundFallback } from "@/components/RouteFallbacks";
 
 export const Route = createFileRoute("/_authenticated/place/$id")({
   loader: ({ params }) => {
@@ -15,17 +16,9 @@ export const Route = createFileRoute("/_authenticated/place/$id")({
       { name: "description", content: loaderData?.place.description ?? "" },
     ],
   }),
+  errorComponent: ({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />,
+  notFoundComponent: RouteNotFoundFallback,
   component: PlaceDetail,
-  notFoundComponent: () => (
-    <div className="app-shell flex min-h-[100dvh] items-center justify-center px-6 text-center">
-      <div>
-        <h1 className="text-2xl font-bold">Não encontramos esse lugar.</h1>
-        <Link to="/home" className="mt-4 inline-block rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground">
-          Voltar ao início
-        </Link>
-      </div>
-    </div>
-  ),
 });
 
 const reviews = [
