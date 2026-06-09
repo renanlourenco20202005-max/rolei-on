@@ -10,7 +10,7 @@ export async function syncPrefsFromCloud() {
     .eq("user_id", u.user.id)
     .maybeSingle();
   if (!data) return;
-  const remote = (data.prefs ?? {}) as Prefs;
+  const remote = (data.prefs ?? {}) as unknown as Partial<Prefs>;
   savePrefs({ likes: [], ...remote, onboarded: data.onboarded });
 }
 
