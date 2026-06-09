@@ -51,14 +51,14 @@ function Splash() {
 
         <div className="flex w-full flex-col items-center gap-4">
           <Link
-            to="/onboarding"
+            to="/login"
             className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-base font-bold text-secondary shadow-glow transition active:scale-[0.98]"
           >
-            Começar
+            Entrar
             <ArrowRight className="h-5 w-5 transition group-hover:translate-x-0.5" />
           </Link>
-          <Link to="/home" className="text-xs font-medium text-white/80">
-            Já tenho conta
+          <Link to="/login" className="text-xs font-medium text-white/80">
+            Criar conta nova
           </Link>
         </div>
       </div>
