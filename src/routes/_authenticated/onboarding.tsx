@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { savePrefs } from "@/lib/store";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Personalize seus rolês — Rolei" }] }),
   component: Onboarding,
 });

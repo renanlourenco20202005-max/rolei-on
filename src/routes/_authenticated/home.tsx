@@ -7,7 +7,7 @@ import { GuiaRolei } from "@/components/GuiaRolei";
 import { places, sections } from "@/lib/data";
 import { usePrefs } from "@/lib/store";
 
-export const Route = createFileRoute("/home")({
+export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Rolei — Início" }] }),
   component: Home,
 });

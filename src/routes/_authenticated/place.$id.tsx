@@ -3,7 +3,7 @@ import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle
 import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 
-export const Route = createFileRoute("/place/$id")({
+export const Route = createFileRoute("/_authenticated/place/$id")({
   loader: ({ params }) => {
     const place = places.find((p) => p.id === params.id);
     if (!place) throw notFound();
