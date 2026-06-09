@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { getPrefs } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { syncPrefsFromCloud } from "@/lib/user-profile";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Rolei — Descubra o que fazer hoje" }] }),
@@ -11,11 +13,20 @@ export const Route = createFileRoute("/")({
 function Splash() {
   const navigate = useNavigate();
   useEffect(() => {
-    const t = setTimeout(() => {
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!data.user) {
+        navigate({ to: "/login", replace: true });
+        return;
+      }
+      await syncPrefsFromCloud();
+      if (cancelled) return;
       const p = getPrefs();
-      if (p.onboarded) navigate({ to: "/home" });
+      navigate({ to: p.onboarded ? "/home" : "/onboarding", replace: true });
     }, 1200);
-    return () => clearTimeout(t);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [navigate]);
 
   return (
@@ -40,14 +51,14 @@ function Splash() {
 
         <div className="flex w-full flex-col items-center gap-4">
           <Link
-            to="/onboarding"
+            to="/login"
             className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-base font-bold text-secondary shadow-glow transition active:scale-[0.98]"
           >
-            Começar
+            Entrar
             <ArrowRight className="h-5 w-5 transition group-hover:translate-x-0.5" />
           </Link>
-          <Link to="/home" className="text-xs font-medium text-white/80">
-            Já tenho conta
+          <Link to="/login" className="text-xs font-medium text-white/80">
+            Criar conta nova
           </Link>
         </div>
       </div>

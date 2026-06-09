@@ -3,7 +3,7 @@ import { ChevronRight, Settings, Clock, Heart, Sparkles, Store, LogOut, Edit3 } 
 import { AppShell } from "@/components/AppShell";
 import { usePrefs, savePrefs } from "@/lib/store";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Perfil — Rolei" }] }),
   component: Profile,
 });

@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { places, events } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 
-export const Route = createFileRoute("/favorites")({
+export const Route = createFileRoute("/_authenticated/favorites")({
   head: () => ({ meta: [{ title: "Salvos — Rolei" }] }),
   component: Favorites,
 });

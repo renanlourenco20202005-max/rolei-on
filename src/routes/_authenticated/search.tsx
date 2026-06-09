@@ -6,7 +6,7 @@ import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 import { Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/search")({
+export const Route = createFileRoute("/_authenticated/search")({
   validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : "" }),
   head: () => ({ meta: [{ title: "Explorar — Rolei" }] }),
   component: SearchPage,
