@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle
 import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 import { recordVisit } from "@/lib/history.functions";
+import { RouteErrorFallback, RouteNotFoundFallback } from "@/components/RouteFallbacks";
 
 export const Route = createFileRoute("/_authenticated/place/$id")({
   loader: ({ params }) => {
