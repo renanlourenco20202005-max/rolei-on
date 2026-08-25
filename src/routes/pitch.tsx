@@ -130,7 +130,8 @@ const plans = [
   },
   {
     name: "Eventos Patrocinados",
-    price: "R$ 49/evento",
+    price: "R$ 49",
+    suffix: "/evento",
     desc: "Empurrão pontual",
     features: [
       "Topo da tela de eventos",
