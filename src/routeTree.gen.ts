@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PitchRouteImport } from './routes/pitch'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -29,6 +30,11 @@ import { Route as AuthenticatedPlaceIdRouteImport } from './routes/_authenticate
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PitchRoute = PitchRouteImport.update({
+  id: '/pitch',
+  path: '/pitch',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/pitch': typeof PitchRoute
   '/reset-password': typeof ResetPasswordRoute
   '/events': typeof AuthenticatedEventsRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/pitch': typeof PitchRoute
   '/reset-password': typeof ResetPasswordRoute
   '/events': typeof AuthenticatedEventsRoute
   '/favorites': typeof AuthenticatedFavoritesRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/pitch': typeof PitchRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/favorites': typeof AuthenticatedFavoritesRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/login'
+    | '/pitch'
     | '/reset-password'
     | '/events'
     | '/favorites'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/login'
+    | '/pitch'
     | '/reset-password'
     | '/events'
     | '/favorites'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/login'
+    | '/pitch'
     | '/reset-password'
     | '/_authenticated/events'
     | '/_authenticated/favorites'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  PitchRoute: typeof PitchRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -230,6 +243,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pitch': {
+      id: '/pitch'
+      path: '/pitch'
+      fullPath: '/pitch'
+      preLoaderRoute: typeof PitchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -375,6 +395,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  PitchRoute: PitchRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
