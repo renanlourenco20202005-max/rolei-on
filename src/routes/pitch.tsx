@@ -21,6 +21,7 @@ import {
   Check,
   X,
   Minus,
+  Moon,
 } from "lucide-react";
 import hero1 from "@/assets/happyhour-1.jpg";
 import bar1 from "@/assets/bar-1.jpg";
@@ -211,6 +212,7 @@ const comparison: { label: string; values: [Mark, Mark, Mark, Mark] }[] = [
   { label: "Eventos do dia hiperlocal", values: ["yes", "partial", "partial", "no"] },
   { label: "Canal de aquisição mensurável p/ parceiro", values: ["yes", "no", "no", "partial"] },
   { label: "Foco em experiência, não em delivery", values: ["yes", "no", "no", "no"] },
+  { label: "Cobre a noite inteira — do jantar ao after", values: ["yes", "no", "no", "no"] },
 ];
 const competitors = ["Rolei", "Google", "Instagram", "iFood"];
 
@@ -318,7 +320,8 @@ function PitchPage() {
                 {[
                   { icon: Sparkles, t: "Guia Rolei (IA)", d: "O usuário diz 'quero um lugar romântico com vinho até R$150' e recebe um roteiro pronto: bar, jantar e o que rolar depois." },
                   { icon: Calendar, t: "Eventos do dia", d: "Hoje, amanhã e fim de semana — com filtros de gratuidade, preço e distância." },
-                  { icon: Star, t: "Curadoria por vibe", d: "Em alta, happy hour, música ao vivo, para casais: seções pensadas por momento, não por categoria fria." },
+                  { icon: Star, t: "Curadoria por vibe", d: "Em alta, happy hour, música ao vivo, balada: seções pensadas por momento, não por categoria fria." },
+                  { icon: Moon, t: "Do jantar ao after", d: "O Rolei acompanha a noite inteira: jantar, festa, balada e o after — roteiros que encadeiam uma experiência na outra." },
                   { icon: MapPin, t: "Hiperlocal", d: "Foco em bairro e distância real a pé ou de carro curto — onde o rolê realmente acontece." },
                 ].map((f) => (
                   <div key={f.t} className="flex gap-4 rounded-2xl bg-secondary-foreground/5 p-5">
@@ -339,7 +342,7 @@ function PitchPage() {
                 <img src={music1} alt="Show de música ao vivo" className="mt-8 h-48 w-full rounded-3xl object-cover" />
                 <img src={food1} alt="Prato de gastronomia artesanal" className="-mt-4 h-48 w-full rounded-3xl object-cover" />
                 <div className="mt-4 flex h-48 flex-col justify-center rounded-3xl bg-gradient-hero p-6 text-white shadow-glow">
-                  <p className="text-4xl font-extrabold">7</p>
+                  <p className="text-4xl font-extrabold">8</p>
                   <p className="mt-1 text-sm font-semibold text-white/90">categorias de experiência em um só lugar</p>
                 </div>
               </div>
@@ -358,9 +361,9 @@ function PitchPage() {
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {[
-            { v: "R$ 500+ bi", l: "movimentados por ano pelo food service fora do lar no Brasil" },
+            { v: "R$ 500+ bi", l: "movimentados por ano por experiências fora do lar no Brasil: bares, restaurantes, festas, shows e eventos" },
             { v: "70%", l: "das decisões de saída acontecem no mesmo dia" },
-            { v: "12 mil+", l: "bares, restaurantes e casas de evento na região metropolitana de Curitiba" },
+            { v: "12 mil+", l: "bares, restaurantes, baladas e casas de evento na região metropolitana de Curitiba" },
           ].map((s, i) => (
             <Reveal key={s.l} delay={i * 120}>
               <div className="rounded-3xl border border-border bg-card p-6 text-center shadow-card">
@@ -374,8 +377,8 @@ function PitchPage() {
         {/* TAM / SAM / SOM */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {[
-            { k: "TAM", v: "R$ 500 bi", d: "Food service fora do lar no Brasil — o guarda-chuva inteiro do mercado." },
-            { k: "SAM", v: "R$ 4,2 bi", d: "Marketing e visibilidade digital de bares, restaurantes e eventos nas 15 capitais-alvo." },
+            { k: "TAM", v: "R$ 500 bi", d: "Experiências fora do lar no Brasil — bares, restaurantes, festas, baladas, shows e eventos." },
+            { k: "SAM", v: "R$ 4,2 bi", d: "Marketing e visibilidade digital de bares, baladas, restaurantes e produtores de eventos nas 15 capitais-alvo." },
             { k: "SOM", v: "R$ 9,5 mi", d: "Receita no Ano 3 com 3.200 parceiros pagantes — menos de 0,3% do SAM." },
           ].map((s, i) => (
             <Reveal key={s.k} delay={i * 120}>

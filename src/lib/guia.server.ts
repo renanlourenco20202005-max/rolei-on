@@ -282,6 +282,7 @@ function localFallback(message: string, catalog: CatalogEntry[]): GuiaSuggestion
       if (/happy|bar|drink|chope/.test(text) && (c.category === "Bar" || hay.includes("happy hour"))) score += 2;
       if (/musica|show|jazz|ao vivo/.test(text) && (c.category === "Música ao vivo" || hay.includes("show"))) score += 2;
       if (/festa|balada|dancar/.test(text) && c.category === "Festa") score += 2;
+      if (/after|madrugada|sunrise|amanhecer/.test(text) && c.category === "After") score += 2;
       if (/cafe|brunch/.test(text) && c.category === "Café") score += 2;
       return { c, score };
     })
