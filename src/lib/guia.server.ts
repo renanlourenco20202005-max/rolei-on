@@ -84,18 +84,70 @@ ${catalogText()}`;
 
   const json = await res.json();
   const content: string = json?.choices?.[0]?.message?.content ?? "";
-  let parsed: { suggestions?: GuiaSuggestion[] };
+  let parsed: { suggestions?: GuiaSuggestion[] } | null = null;
   try {
     parsed = JSON.parse(content);
   } catch {
-    throw new Error("O Guia não conseguiu montar as sugestões. Tente de novo.");
+    // tenta extrair o primeiro objeto json da resposta (ex.: vindo com markdown)
+    const match = content.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { parsed = JSON.parse(match[0]); } catch { parsed = null; }
+    }
   }
 
   const validPlace = new Set(places.map((p) => p.id));
   const validEvent = new Set(events.map((e) => e.id));
-  return (parsed.suggestions ?? [])
+  const fromAI = (parsed?.suggestions ?? [])
     .filter((s) =>
       (s.type === "place" && validPlace.has(s.id)) || (s.type === "event" && validEvent.has(s.id)),
     )
     .slice(0, 4);
+
+  // Se a IA não retornou nada válido, cai para um ranqueamento local determinístico
+  // para o Guia nunca voltar de mãos vazias.
+  return fromAI.length > 0 ? fromAI : localFallback(message);
+}
+
+const PRICE_RANGE: Record<string, [number, number]> = {
+  $: [0, 50],
+  $$: [50, 100],
+  $$$: [100, 200],
+  $$$$: [200, 9999],
+};
+
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+function localFallback(message: string): GuiaSuggestion[] {
+  const text = normalize(message);
+  const tokens = text.split(/[^a-z0-9$]+/).filter((t) => t.length > 2);
+  const budgetMatch = message.match(/r\$\s*(\d+)/i) ?? message.match(/(\d+)\s*reais/i);
+  const budget = budgetMatch ? Number(budgetMatch[1]) : null;
+
+  const scored = places
+    .filter((p) => (budget ? PRICE_RANGE[p.price][0] <= budget : true))
+    .map((p) => {
+      const hay = normalize([p.name, p.category, p.description, ...p.tags, ...p.vibes].join(" "));
+      let score = p.rating / 10 + (p.promo ? 0.4 : 0);
+      for (const t of tokens) if (hay.includes(t)) score += 2;
+      if (/romantic|namorad|casal/.test(text) && p.vibes.some((v) => ["romântico", "casal"].includes(v))) score += 2;
+      if (/vinho/.test(text) && hay.includes("vinho")) score += 2;
+      if (/happy|bar|drink|chope/.test(text) && (p.category === "Bar" || p.vibes.includes("happy hour"))) score += 2;
+      if (/musica|show|jazz|ao vivo/.test(text) && (p.category === "Música ao vivo" || hay.includes("show"))) score += 2;
+      if (/festa|balada|dancar/.test(text) && p.category === "Festa") score += 2;
+      if (/cafe|brunch/.test(text) && p.category === "Café") score += 2;
+      return { p, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  return scored.map(({ p }) => ({
+    type: "place" as const,
+    id: p.id,
+    reason: `${p.category} com nota ${p.rating} e clima ${p.vibes.slice(0, 2).join(" e ")} — combina com o seu pedido.`,
+  }));
 }
