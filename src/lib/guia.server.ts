@@ -232,16 +232,7 @@ ${catalog.map((c) => `- ${c.searchText}`).join("\n")}`;
   const fromAI = (parsed?.suggestions ?? [])
     .filter((s) => (s.type === "place" || s.type === "event") && byId.has(s.id))
     .slice(0, 4)
-    .map((s): GuiaSuggestion => {
-      const entry = byId.get(s.id)!;
-      return { ...entry, searchText: undefined as never, reason: s.reason } as GuiaSuggestion;
-    })
-    .map(({ ...s }) => {
-      // remove campos internos do DTO
-      const { searchText: _omit, ...dto } = s as GuiaSuggestion & { searchText?: string };
-      void _omit;
-      return dto;
-    });
+    .map((s) => stripEntry(byId.get(s.id)!, s.reason));
 
   // Se a IA não retornou nada válido, cai para um ranqueamento local determinístico
   // para o Guia nunca voltar de mãos vazias.
