@@ -12,16 +12,12 @@ export const recordVisit = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => visitSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    // Re-register: remove previous entry for the same item so it bubbles to the top
-    await supabase
-      .from("visit_history")
-      .delete()
-      .eq("user_id", userId)
-      .eq("kind", data.kind)
-      .eq("item_id", data.itemId);
     const { error } = await supabase
       .from("visit_history")
-      .insert({ user_id: userId, kind: data.kind, item_id: data.itemId });
+      .upsert(
+        { user_id: userId, kind: data.kind, item_id: data.itemId, visited_at: new Date().toISOString() },
+        { onConflict: "user_id,kind,item_id" },
+      );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
