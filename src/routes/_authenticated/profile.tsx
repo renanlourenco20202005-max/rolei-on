@@ -1,7 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { ChevronRight, Settings, Clock, Heart, Sparkles, Store, LogOut, Edit3 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
 import { usePrefs, savePrefs } from "@/lib/store";
+import { listHistory } from "@/lib/history.functions";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Perfil — Rolei" }] }),
@@ -11,28 +16,48 @@ export const Route = createFileRoute("/_authenticated/profile")({
 function Profile() {
   const prefs = usePrefs();
   const navigate = useNavigate();
+  const fetchHistory = useServerFn(listHistory);
+  const [displayName, setDisplayName] = useState("");
 
-  const reset = () => {
-    savePrefs({ likes: [], onboarded: false });
-    navigate({ to: "/" });
+  const { data: history } = useQuery({
+    queryKey: ["history"],
+    queryFn: () => fetchHistory(),
+  });
+
+  useEffect(() => {
+    supabase
+      .from("user_profiles")
+      .select("display_name")
+      .maybeSingle()
+      .then(({ data }) => setDisplayName(data?.display_name ?? ""));
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
   };
+
+  const initial = displayName.trim() ? displayName.trim()[0]!.toUpperCase() : "R";
 
   return (
     <AppShell>
       <header className="bg-gradient-hero px-5 pb-8 pt-10 text-white">
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/20 text-2xl font-extrabold backdrop-blur">
-            R
+            {initial}
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest opacity-80">Bem-vindo</p>
-            <h1 className="truncate text-2xl font-extrabold">Visitante Rolei</h1>
+            <h1 className="truncate text-2xl font-extrabold">{displayName || "Visitante Rolei"}</h1>
           </div>
         </div>
 
-        <button className="mt-5 flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold backdrop-blur">
+        <Link
+          to="/settings"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold backdrop-blur"
+        >
           <Edit3 className="h-3.5 w-3.5" /> Editar perfil
-        </button>
+        </Link>
       </header>
 
       <section className="-mt-5 px-5">
@@ -57,10 +82,23 @@ function Profile() {
       <section className="mt-5 px-5">
         <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">Atalhos</h2>
         <div className="overflow-hidden rounded-3xl bg-card shadow-card">
-          <Item icon={Clock} label="Histórico de rolês" badge="12" />
+          <Item
+            icon={Clock}
+            label="Histórico de rolês"
+            to="/history"
+            badge={history && history.length > 0 ? String(history.length) : undefined}
+          />
           <Item icon={Heart} label="Salvos" to="/favorites" />
-          <Item icon={Store} label="Sou parceiro Rolei" to="/partner" badge="Novo" highlight />
-          <Item icon={Settings} label="Configurações" />
+          <span onClick={() => { if (!prefs.partnerSeen) savePrefs({ ...prefs, partnerSeen: true }); }}>
+            <Item
+              icon={Store}
+              label="Sou parceiro Rolei"
+              to="/partner"
+              badge={prefs.partnerSeen ? undefined : "Novo"}
+              highlight={!prefs.partnerSeen}
+            />
+          </span>
+          <Item icon={Settings} label="Configurações" to="/settings" />
         </div>
       </section>
 
@@ -79,7 +117,7 @@ function Profile() {
 
       <section className="mt-5 px-5">
         <button
-          onClick={reset}
+          onClick={signOut}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-card py-3.5 text-sm font-semibold text-destructive shadow-card"
         >
           <LogOut className="h-4 w-4" /> Sair
