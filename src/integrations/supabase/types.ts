@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partner_profiles: {
         Row: {
           address: string
@@ -95,6 +119,30 @@ export type Database = {
           prefs?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      visit_history: {
+        Row: {
+          id: string
+          item_id: string
+          kind: string
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          kind: string
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          kind?: string
+          user_id?: string
+          visited_at?: string
         }
         Relationships: []
       }

@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle, Navigation, Calendar, Tag } from "lucide-react";
 import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
+import { recordVisit } from "@/lib/history.functions";
 import { RouteErrorFallback, RouteNotFoundFallback } from "@/components/RouteFallbacks";
 
 export const Route = createFileRoute("/_authenticated/place/$id")({
@@ -32,6 +34,10 @@ function PlaceDetail() {
   const navigate = useNavigate();
   const { favs, toggle } = useFavorites();
   const saved = favs.places.includes(place.id);
+
+  useEffect(() => {
+    recordVisit({ data: { kind: "places", itemId: place.id } }).catch(() => {});
+  }, [place.id]);
 
   return (
     <div className="app-shell pb-32">

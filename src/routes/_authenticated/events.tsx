@@ -4,6 +4,7 @@ import { Calendar, MapPin, Heart } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { events, type EventItem } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
+import { recordVisit } from "@/lib/history.functions";
 
 export const Route = createFileRoute("/_authenticated/events")({
   head: () => ({ meta: [{ title: "Eventos — Rolei" }] }),
@@ -55,7 +56,10 @@ function EventsPage() {
 
       <div className="space-y-4 px-5 pt-2">
         {list.map((e) => (
-          <EventCard key={e.id} e={e} saved={favs.events.includes(e.id)} onToggle={() => toggle("events", e.id)} />
+          <EventCard key={e.id} e={e} saved={favs.events.includes(e.id)} onToggle={() => {
+            if (!favs.events.includes(e.id)) recordVisit({ data: { kind: "events", itemId: e.id } }).catch(() => {});
+            toggle("events", e.id);
+          }} />
         ))}
         {list.length === 0 && (
           <div className="rounded-3xl bg-card p-8 text-center shadow-card">
