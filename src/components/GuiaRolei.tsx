@@ -1,10 +1,59 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, X, Send, Star, MapPin, Calendar, Loader2 } from "lucide-react";
-import { places, events } from "@/lib/data";
+import { Sparkles, X, Send, Star, MapPin, Calendar, Loader2, SlidersHorizontal } from "lucide-react";
+import { places, events, type Place, type EventItem } from "@/lib/data";
 import { askGuia, type GuiaSuggestion } from "@/lib/guia.functions";
 import { getPrefs } from "@/lib/store";
+
+interface GuiaFilters {
+  maxDistance: number | null; // km
+  maxPrice: number | null; // 1..4 ($ → $$$$)
+  category: string | null;
+  minRating: number | null;
+  onlyPromo: boolean;
+}
+
+const DEFAULT_FILTERS: GuiaFilters = {
+  maxDistance: null,
+  maxPrice: null,
+  category: null,
+  minRating: null,
+  onlyPromo: false,
+};
+
+function parseDistanceKm(distance: string): number {
+  const n = Number(distance.replace(",", ".").replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : Infinity;
+}
+
+function eventPriceLevel(e: EventItem): number {
+  if (e.free) return 1;
+  const n = Number((e.price ?? "").replace(/[^\d]/g, ""));
+  if (!Number.isFinite(n) || n === 0) return 1;
+  if (n <= 60) return 2;
+  if (n <= 120) return 3;
+  return 4;
+}
+
+function placeMatches(p: Place, f: GuiaFilters): boolean {
+  if (f.maxDistance !== null && parseDistanceKm(p.distance) > f.maxDistance) return false;
+  if (f.maxPrice !== null && p.price.length > f.maxPrice) return false;
+  if (f.category !== null && p.category !== f.category) return false;
+  if (f.minRating !== null && p.rating < f.minRating) return false;
+  if (f.onlyPromo && !p.promo) return false;
+  return true;
+}
+
+function eventMatches(e: EventItem, f: GuiaFilters): boolean {
+  // Eventos não têm distância/avaliação cadastradas: filtros desses campos ocultam eventos.
+  if (f.maxDistance !== null) return false;
+  if (f.minRating !== null) return false;
+  if (f.maxPrice !== null && eventPriceLevel(e) > f.maxPrice) return false;
+  if (f.category !== null && e.category !== f.category) return false;
+  if (f.onlyPromo && !e.free) return false;
+  return true;
+}
 
 export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: string }) {
   const [input, setInput] = useState(initial ?? "");
@@ -12,7 +61,43 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
   const [results, setResults] = useState<GuiaSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<GuiaFilters>(DEFAULT_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
   const ask = useServerFn(askGuia);
+
+  const filtered = useMemo(
+    () =>
+      results.filter((s) => {
+        if (s.type === "place") {
+          const p = places.find((pl) => pl.id === s.id);
+          return p ? placeMatches(p, filters) : false;
+        }
+        const e = events.find((ev) => ev.id === s.id);
+        return e ? eventMatches(e, filters) : false;
+      }),
+    [results, filters],
+  );
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of results) {
+      if (s.type === "place") {
+        const p = places.find((pl) => pl.id === s.id);
+        if (p) set.add(p.category);
+      } else {
+        const e = events.find((ev) => ev.id === s.id);
+        if (e) set.add(e.category);
+      }
+    }
+    return Array.from(set);
+  }, [results]);
+
+  const activeFilterCount =
+    (filters.maxDistance !== null ? 1 : 0) +
+    (filters.maxPrice !== null ? 1 : 0) +
+    (filters.category !== null ? 1 : 0) +
+    (filters.minRating !== null ? 1 : 0) +
+    (filters.onlyPromo ? 1 : 0);
 
   if (!open) return null;
 
@@ -23,6 +108,8 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
     setLoading(true);
     setError(null);
     setResults([]);
+    setFilters(DEFAULT_FILTERS);
+    setShowFilters(false);
     try {
       const prefs = getPrefs();
       const { suggestions } = await ask({
@@ -130,13 +217,132 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
             )}
 
             {!loading && !error && results.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Selecionei {results.length} {results.length === 1 ? "sugestão" : "sugestões"} pensando em:{" "}
-                <span className="text-foreground">"{submitted}"</span>
-              </p>
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {activeFilterCount > 0
+                      ? `${filtered.length} de ${results.length} ${results.length === 1 ? "sugestão" : "sugestões"}`
+                      : `Selecionei ${results.length} ${results.length === 1 ? "sugestão" : "sugestões"}`}{" "}
+                    pensando em: <span className="text-foreground">"{submitted}"</span>
+                  </p>
+                  <button
+                    onClick={() => setShowFilters((v) => !v)}
+                    aria-expanded={showFilters}
+                    className={`flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:scale-95 ${
+                      activeFilterCount > 0 ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    }`}
+                  >
+                    <SlidersHorizontal className="h-3 w-3" />
+                    Filtros{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
+                  </button>
+                </div>
+
+                {showFilters && (
+                  <div className="space-y-3 rounded-2xl border border-border bg-background p-3">
+                    <FilterGroup label="Distância">
+                      {[
+                        { label: "Até 1 km", value: 1 },
+                        { label: "Até 3 km", value: 3 },
+                      ].map((o) => (
+                        <Chip
+                          key={o.label}
+                          active={filters.maxDistance === o.value}
+                          onClick={() =>
+                            setFilters((f) => ({ ...f, maxDistance: f.maxDistance === o.value ? null : o.value }))
+                          }
+                        >
+                          {o.label}
+                        </Chip>
+                      ))}
+                    </FilterGroup>
+
+                    <FilterGroup label="Preço">
+                      {[
+                        { label: "$", value: 1 },
+                        { label: "até $$", value: 2 },
+                        { label: "até $$$", value: 3 },
+                      ].map((o) => (
+                        <Chip
+                          key={o.label}
+                          active={filters.maxPrice === o.value}
+                          onClick={() =>
+                            setFilters((f) => ({ ...f, maxPrice: f.maxPrice === o.value ? null : o.value }))
+                          }
+                        >
+                          {o.label}
+                        </Chip>
+                      ))}
+                    </FilterGroup>
+
+                    {categories.length > 1 && (
+                      <FilterGroup label="Categoria">
+                        {categories.map((c) => (
+                          <Chip
+                            key={c}
+                            active={filters.category === c}
+                            onClick={() =>
+                              setFilters((f) => ({ ...f, category: f.category === c ? null : c }))
+                            }
+                          >
+                            {c}
+                          </Chip>
+                        ))}
+                      </FilterGroup>
+                    )}
+
+                    <FilterGroup label="Avaliação">
+                      {[
+                        { label: "4,5+", value: 4.5 },
+                        { label: "4,7+", value: 4.7 },
+                      ].map((o) => (
+                        <Chip
+                          key={o.label}
+                          active={filters.minRating === o.value}
+                          onClick={() =>
+                            setFilters((f) => ({ ...f, minRating: f.minRating === o.value ? null : o.value }))
+                          }
+                        >
+                          {o.label}
+                        </Chip>
+                      ))}
+                    </FilterGroup>
+
+                    <FilterGroup label="Promoções">
+                      <Chip
+                        active={filters.onlyPromo}
+                        onClick={() => setFilters((f) => ({ ...f, onlyPromo: !f.onlyPromo }))}
+                      >
+                        Só com promoção ou grátis
+                      </Chip>
+                    </FilterGroup>
+
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={() => setFilters(DEFAULT_FILTERS)}
+                        className="w-full rounded-xl py-1.5 text-[11px] font-semibold text-primary"
+                      >
+                        Limpar filtros
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
-            {!loading && !error && results.map((s) =>
+            {!loading && !error && results.length > 0 && filtered.length === 0 && (
+              <div className="rounded-2xl bg-muted px-4 py-4 text-center">
+                <p className="text-sm font-semibold">Nenhuma sugestão passa pelos filtros</p>
+                <p className="mt-1 text-xs text-muted-foreground">Ajuste ou limpe os filtros para ver mais opções.</p>
+                <button
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="mt-3 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && filtered.map((s) =>
               s.type === "place" ? (
                 <PlaceSuggestion key={`place-${s.id}`} id={s.id} reason={s.reason} onClose={onClose} />
               ) : (
@@ -146,7 +352,7 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
 
             {!loading && (
               <button
-                onClick={() => { setSubmitted(null); setError(null); setResults([]); }}
+                onClick={() => { setSubmitted(null); setError(null); setResults([]); setFilters(DEFAULT_FILTERS); }}
                 className="w-full rounded-xl py-2 text-xs font-medium text-primary"
               >
                 Fazer outra pergunta
@@ -156,6 +362,29 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
         )}
       </div>
     </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-full px-3 py-1.5 text-[11px] font-medium transition active:scale-95 ${
+        active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -171,7 +400,10 @@ function PlaceSuggestion({ id, reason, onClose }: { id: string; reason: string; 
     >
       <img src={p.image} alt={p.name} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
       <div className="min-w-0 flex-1 py-1">
-        <p className="truncate text-sm font-bold">{p.name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-bold">{p.name}</p>
+          {p.promo && <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">PROMO</span>}
+        </div>
         <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{reason}</p>
         <div className="mt-1.5 flex items-center gap-2 text-[11px]">
           <span className="flex items-center gap-1 font-semibold text-foreground">
@@ -194,7 +426,10 @@ function EventSuggestion({ id, reason }: { id: string; reason: string }) {
     <div className="flex gap-3 rounded-2xl border border-border bg-card p-2">
       <img src={e.image} alt={e.title} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
       <div className="min-w-0 flex-1 py-1">
-        <p className="line-clamp-1 text-sm font-bold">{e.title}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="line-clamp-1 text-sm font-bold">{e.title}</p>
+          {e.free && <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">GRÁTIS</span>}
+        </div>
         <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{reason}</p>
         <div className="mt-1.5 flex items-center gap-2 text-[11px]">
           <span className="flex items-center gap-1 font-semibold text-primary">
