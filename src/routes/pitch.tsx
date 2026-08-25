@@ -15,6 +15,12 @@ import {
   Calendar,
   Star,
   CheckCircle2,
+  Map,
+  Globe2,
+  Crown,
+  Check,
+  X,
+  Minus,
 } from "lucide-react";
 import hero1 from "@/assets/happyhour-1.jpg";
 import bar1 from "@/assets/bar-1.jpg";
@@ -28,13 +34,13 @@ export const Route = createFileRoute("/pitch")({
       {
         name: "description",
         content:
-          "Rolei é o app que responde 'o que fazer hoje?': descoberta de bares, restaurantes, eventos e experiências com IA. Conheça o modelo de negócio e a projeção de faturamento.",
+          "Rolei é o app que responde 'o que fazer hoje?': descoberta de bares, restaurantes, eventos e experiências com IA. Começando por Curitiba, com expansão nacional e receita recorrente de parceiros.",
       },
       { property: "og:title", content: "Rolei — O que fazer hoje?" },
       {
         property: "og:description",
         content:
-          "Descoberta de experiências com IA, monetização via planos para parceiros e eventos patrocinados.",
+          "Descoberta de experiências com IA, lançamento em Curitiba, expansão nacional e monetização via planos para parceiros e eventos patrocinados.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -72,13 +78,9 @@ function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }
   );
 }
 
-function Kicker({ children, light }: { children: ReactNode; light?: boolean }) {
+function Kicker({ children }: { children: ReactNode }) {
   return (
-    <p
-      className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
-        light ? "text-primary" : "text-primary"
-      }`}
-    >
+    <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
       <span className="h-px w-6 bg-primary" />
       {children}
     </p>
@@ -90,8 +92,14 @@ const plans = [
     name: "Gratuito",
     price: "R$ 0",
     desc: "Presença básica no app",
-    features: ["Perfil do estabelecimento", "Aparece nas buscas", "1 foto de capa"],
+    features: [
+      "Perfil do estabelecimento",
+      "Aparece nas buscas",
+      "1 foto de capa",
+      "Métricas básicas de views",
+    ],
     highlight: false,
+    tag: null as string | null,
   },
   {
     name: "Destaque",
@@ -104,28 +112,123 @@ const plans = [
       "Prioridade no Guia Rolei",
     ],
     highlight: true,
+    tag: "Carro-chefe",
+  },
+  {
+    name: "Premium",
+    price: "R$ 399/mês",
+    desc: "Domínio de categoria e bairro",
+    features: [
+      "Tudo do plano Destaque",
+      "Topo da categoria e do bairro",
+      "Destaque prioritário no Guia IA",
+      "Relatórios avançados e exportação",
+      "Selo Premium verificado",
+    ],
+    highlight: false,
+    tag: "Maior margem",
   },
   {
     name: "Eventos Patrocinados",
     price: "R$ 49/evento",
     desc: "Empurrão pontual",
-    features: ["Topo da tela de eventos", "Selo 'Patrocinado'", "Alcance segmentado por bairro"],
+    features: [
+      "Topo da tela de eventos",
+      "Selo 'Patrocinado'",
+      "Alcance segmentado por bairro",
+    ],
     highlight: false,
+    tag: null,
   },
 ];
 
 const revenueRows = [
-  { year: "Ano 1", partners: 120, events: 60, mrr: "R$ 24 mil", arr: "R$ 324 mil" },
-  { year: "Ano 2", partners: 450, events: 300, mrr: "R$ 90 mil", arr: "R$ 1,25 mi" },
-  { year: "Ano 3", partners: 1200, events: 900, mrr: "R$ 240 mil", arr: "R$ 3,4 mi" },
+  {
+    year: "Ano 1",
+    coverage: "Curitiba",
+    partners: "300",
+    events: "120",
+    mrr: "R$ 84 mil",
+    arr: "R$ 720 mil",
+  },
+  {
+    year: "Ano 2",
+    coverage: "6 cidades (Sul + SP)",
+    partners: "1.100",
+    events: "450",
+    mrr: "R$ 307 mil",
+    arr: "R$ 3,2 mi",
+  },
+  {
+    year: "Ano 3",
+    coverage: "15 cidades (nacional)",
+    partners: "3.200",
+    events: "1.300",
+    mrr: "R$ 893 mil",
+    arr: "R$ 9,5 mi",
+  },
 ];
 
 const funnel = [
   { label: "Indicação e prospecção ativa bairro a bairro", icon: Target },
   { label: "Cadastro gratuito em 5 minutos pelo painel parceiro", icon: Store },
   { label: "Onboarding com fotos, promoção de lançamento e métricas", icon: BarChart3 },
-  { label: "Upgrade para Destaque ao ver ROI no painel", icon: TrendingUp },
+  { label: "Upgrade para Destaque/Premium ao ver ROI no painel", icon: TrendingUp },
 ];
+
+const roadmap = [
+  {
+    icon: MapPin,
+    phase: "Fase 1 · 2026",
+    title: "Curitiba",
+    desc: "Provar retenção e ROI do parceiro em Batel, Água Verde e Centro. Custo de aquisição baixo, cena gastronômica forte e público early-adopter.",
+    goal: "Meta: 300 parceiros pagantes",
+  },
+  {
+    icon: Map,
+    phase: "Fase 2 · 2027",
+    title: "Sul + São Paulo",
+    desc: "Florianópolis, Porto Alegre, São Paulo e Campinas com o playbook validado em Curitiba, replicado cidade a cidade.",
+    goal: "Meta: 1.100 parceiros pagantes",
+  },
+  {
+    icon: Globe2,
+    phase: "Fase 3 · 2028",
+    title: "Nacional",
+    desc: "Rio, BH, Brasília, Salvador, Recife e Fortaleza. Marca consolidada como a resposta padrão para 'o que fazer hoje?'.",
+    goal: "Meta: 3.200 parceiros pagantes",
+  },
+];
+
+type Mark = "yes" | "no" | "partial";
+const comparison: { label: string; values: [Mark, Mark, Mark, Mark] }[] = [
+  { label: "Responde “o que fazer hoje?”", values: ["yes", "no", "no", "no"] },
+  { label: "Recomendação por vibe com IA", values: ["yes", "no", "no", "no"] },
+  { label: "Eventos do dia hiperlocal", values: ["yes", "partial", "partial", "no"] },
+  { label: "Canal de aquisição mensurável p/ parceiro", values: ["yes", "no", "no", "partial"] },
+  { label: "Foco em experiência, não em delivery", values: ["yes", "no", "no", "no"] },
+];
+const competitors = ["Rolei", "Google", "Instagram", "iFood"];
+
+function MarkIcon({ mark }: { mark: Mark }) {
+  if (mark === "yes")
+    return (
+      <span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-promo/15 text-promo">
+        <Check className="h-4 w-4" />
+      </span>
+    );
+  if (mark === "partial")
+    return (
+      <span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-secondary-foreground/10 text-secondary-foreground/70">
+        <Minus className="h-4 w-4" />
+      </span>
+    );
+  return (
+    <span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-secondary-foreground/5 text-secondary-foreground/40">
+      <X className="h-4 w-4" />
+    </span>
+  );
+}
 
 function PitchPage() {
   return (
@@ -148,7 +251,7 @@ function PitchPage() {
             </h1>
             <p className="mt-5 max-w-xl text-lg text-secondary-foreground/80">
               O Rolei responde a pergunta que milhões de pessoas fazem toda semana — e conecta
-              quem quer sair a quem quer encher a casa.
+              quem quer sair a quem quer encher a casa. Lançamento em Curitiba, expansão nacional.
             </p>
           </Reveal>
           <Reveal delay={150}>
@@ -200,7 +303,7 @@ function PitchPage() {
       <section className="bg-secondary py-24 text-secondary-foreground">
         <div className="mx-auto max-w-4xl px-6">
           <Reveal>
-            <Kicker light>A solução</Kicker>
+            <Kicker>A solução</Kicker>
             <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
               Um app que recomenda <span className="bg-gradient-hero bg-clip-text text-transparent">experiências</span>, não estabelecimentos.
             </h2>
@@ -213,7 +316,7 @@ function PitchPage() {
                   { icon: Calendar, t: "Eventos do dia", d: "Hoje, amanhã e fim de semana — com filtros de gratuidade, preço e distância." },
                   { icon: Star, t: "Curadoria por vibe", d: "Em alta, happy hour, música ao vivo, para casais: seções pensadas por momento, não por categoria fria." },
                   { icon: MapPin, t: "Hiperlocal", d: "Foco em bairro e distância real a pé ou de carro curto — onde o rolê realmente acontece." },
-                ].map((f, i) => (
+                ].map((f) => (
                   <div key={f.t} className="flex gap-4 rounded-2xl bg-secondary-foreground/5 p-5">
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-hero text-white">
                       <f.icon className="h-4.5 w-4.5" />
@@ -251,9 +354,9 @@ function PitchPage() {
         </Reveal>
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {[
-            { v: "R$ 100+ bi", l: "movimentados por ano por bares e restaurantes no Brasil" },
+            { v: "R$ 500+ bi", l: "movimentados por ano pelo food service fora do lar no Brasil" },
             { v: "70%", l: "das decisões de saída acontecem no mesmo dia" },
-            { v: "0", l: "players dominantes em descoberta local de experiências" },
+            { v: "12 mil+", l: "bares, restaurantes e casas de evento na região metropolitana de Curitiba" },
           ].map((s, i) => (
             <Reveal key={s.l} delay={i * 120}>
               <div className="rounded-3xl border border-border bg-card p-6 text-center shadow-card">
@@ -263,25 +366,44 @@ function PitchPage() {
             </Reveal>
           ))}
         </div>
+
+        {/* TAM / SAM / SOM */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          {[
+            { k: "TAM", v: "R$ 500 bi", d: "Food service fora do lar no Brasil — o guarda-chuva inteiro do mercado." },
+            { k: "SAM", v: "R$ 4,2 bi", d: "Marketing e visibilidade digital de bares, restaurantes e eventos nas 15 capitais-alvo." },
+            { k: "SOM", v: "R$ 9,5 mi", d: "Receita no Ano 3 com 3.200 parceiros pagantes — menos de 0,3% do SAM." },
+          ].map((s, i) => (
+            <Reveal key={s.k} delay={i * 120}>
+              <div className="h-full rounded-3xl bg-card p-6 shadow-card">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">{s.k}</p>
+                <p className="mt-2 text-3xl font-extrabold">{s.v}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
         <Reveal delay={200}>
           <p className="mt-8 rounded-2xl bg-accent p-5 text-sm leading-relaxed text-accent-foreground">
-            <strong>Praia inicial:</strong> São Paulo — Vila Madalena, Pinheiros e Augusta, os bairros
-            com maior densidade de bares, eventos e público early-adopter do país. Expansão
-            replicável bairro a bairro, cidade a cidade.
+            <strong>Praia inicial:</strong> Curitiba — Batel, Água Verde e Centro. Capital com 3,2 mi
+            de pessoas na região metropolitana, uma das cenas gastronômicas mais fortes do país e
+            custo de aquisição muito menor que São Paulo. O playbook validado aqui é replicado
+            bairro a bairro, cidade a cidade.
           </p>
         </Reveal>
       </section>
 
       {/* MODELO DE RECEITA */}
       <section id="modelo" className="bg-secondary py-24 text-secondary-foreground">
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto max-w-5xl px-6">
           <Reveal>
-            <Kicker light>Como ganhamos dinheiro</Kicker>
+            <Kicker>Como ganhamos dinheiro</Kicker>
             <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
               Receita recorrente do lado do parceiro. Grátis para o usuário, sempre.
             </h2>
           </Reveal>
-          <div className="mt-12 grid gap-4 sm:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {plans.map((p, i) => (
               <Reveal key={p.name} delay={i * 120}>
                 <div
@@ -291,9 +413,14 @@ function PitchPage() {
                       : "bg-secondary-foreground/5"
                   }`}
                 >
-                  {p.highlight && (
-                    <span className="mb-3 w-fit rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
-                      Carro-chefe
+                  {p.tag && (
+                    <span
+                      className={`mb-3 flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
+                        p.highlight ? "bg-white/20" : "bg-promo/15 text-promo"
+                      }`}
+                    >
+                      {!p.highlight && <Crown className="h-3 w-3" />}
+                      {p.tag}
                     </span>
                   )}
                   <h3 className="text-lg font-bold">{p.name}</h3>
@@ -313,8 +440,9 @@ function PitchPage() {
           </div>
           <Reveal delay={200}>
             <p className="mt-8 text-sm text-secondary-foreground/70">
-              Receitas futuras: comissão em reservas e ingressos, destaque no Guia Rolei e
-              dados de tendência de consumo para marcas (sempre anonimizados).
+              Receitas futuras: comissão em reservas e ingressos, plano Enterprise para redes e
+              franquias, destaque no Guia Rolei e dados de tendência de consumo para marcas
+              (sempre anonimizados).
             </p>
           </Reveal>
         </div>
@@ -365,20 +493,25 @@ function PitchPage() {
 
       {/* PROJEÇÃO */}
       <section className="bg-secondary py-24 text-secondary-foreground">
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto max-w-5xl px-6">
           <Reveal>
-            <Kicker light>Projeção de faturamento</Kicker>
+            <Kicker>Projeção de faturamento</Kicker>
             <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
-              Cenário conservador, só com plano Destaque + eventos patrocinados.
+              De Curitiba para o Brasil: R$ 9,5 mi de receita no Ano 3.
             </h2>
+            <p className="mt-3 max-w-2xl text-sm text-secondary-foreground/70">
+              Cenário conservador, considerando apenas planos mensais (mix Destaque + Premium) e
+              eventos patrocinados — sem comissões em reservas, ingressos ou receita de dados.
+            </p>
           </Reveal>
           <Reveal delay={150}>
-            <div className="mt-10 overflow-hidden rounded-3xl bg-secondary-foreground/5">
-              <table className="w-full text-left text-sm">
+            <div className="mt-10 overflow-x-auto rounded-3xl bg-secondary-foreground/5">
+              <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-secondary-foreground/10 text-[11px] uppercase tracking-widest text-secondary-foreground/60">
                     <th className="px-5 py-4 font-bold">Período</th>
-                    <th className="px-5 py-4 font-bold">Parceiros Destaque</th>
+                    <th className="px-5 py-4 font-bold">Cobertura</th>
+                    <th className="px-5 py-4 font-bold">Parceiros pagantes</th>
                     <th className="px-5 py-4 font-bold">Eventos patroc./mês</th>
                     <th className="px-5 py-4 font-bold">MRR</th>
                     <th className="px-5 py-4 font-bold">Receita anual</th>
@@ -388,6 +521,7 @@ function PitchPage() {
                   {revenueRows.map((r) => (
                     <tr key={r.year} className="border-b border-secondary-foreground/5 last:border-0">
                       <td className="px-5 py-4 font-bold">{r.year}</td>
+                      <td className="px-5 py-4">{r.coverage}</td>
                       <td className="px-5 py-4">{r.partners}</td>
                       <td className="px-5 py-4">{r.events}</td>
                       <td className="px-5 py-4 font-bold text-promo">{r.mrr}</td>
@@ -401,7 +535,7 @@ function PitchPage() {
           <Reveal delay={250}>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
-                { v: "R$ 199", l: "ticket mensal por parceiro Destaque" },
+                { v: "R$ 259", l: "ticket médio mensal (mix de 70% Destaque + 30% Premium)" },
                 { v: "~5%", l: "conversão estimada de cadastros gratuitos para pagantes" },
                 { v: "SaaS B2B2C", l: "margem alta: o custo marginal por parceiro tende a zero" },
               ].map((s) => (
@@ -412,7 +546,87 @@ function PitchPage() {
               ))}
             </div>
             <p className="mt-6 text-[11px] text-secondary-foreground/50">
-              * Projeções ilustrativas baseadas em premissas de penetração nos bairros-alvo de São Paulo. Não incluem receitas de comissão em reservas/ingressos.
+              * Projeções ilustrativas baseadas em premissas de penetração nos bairros-alvo de
+              Curitiba e nas cidades do roadmap. Não incluem receitas de comissão em
+              reservas/ingressos, plano Enterprise nem dados de tendência.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ROADMAP DE EXPANSÃO */}
+      <section className="mx-auto max-w-4xl px-6 py-24">
+        <Reveal>
+          <Kicker>Roadmap de expansão</Kicker>
+          <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
+            Um playbook, quinze cidades.
+          </h2>
+        </Reveal>
+        <div className="mt-10 space-y-4">
+          {roadmap.map((r, i) => (
+            <Reveal key={r.phase} delay={i * 120}>
+              <div className="flex flex-col gap-4 rounded-3xl bg-card p-6 shadow-card sm:flex-row sm:items-center sm:gap-6">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-hero text-white shadow-glow">
+                  <r.icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">{r.phase}</p>
+                  <h3 className="mt-1 text-lg font-extrabold">{r.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{r.desc}</p>
+                </div>
+                <span className="w-fit shrink-0 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground">
+                  {r.goal}
+                </span>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* CONCORRÊNCIA */}
+      <section className="bg-secondary py-24 text-secondary-foreground">
+        <div className="mx-auto max-w-4xl px-6">
+          <Reveal>
+            <Kicker>Cenário competitivo</Kicker>
+            <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
+              Ninguém responde “o que fazer hoje?”. Nós sim.
+            </h2>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="mt-10 overflow-x-auto rounded-3xl bg-secondary-foreground/5">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead>
+                  <tr className="border-b border-secondary-foreground/10 text-[11px] uppercase tracking-widest text-secondary-foreground/60">
+                    <th className="px-5 py-4 text-left font-bold">Capacidade</th>
+                    {competitors.map((c) => (
+                      <th
+                        key={c}
+                        className={`px-4 py-4 text-center font-bold ${c === "Rolei" ? "text-primary" : ""}`}
+                      >
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.map((row) => (
+                    <tr key={row.label} className="border-b border-secondary-foreground/5 last:border-0">
+                      <td className="px-5 py-4 font-semibold">{row.label}</td>
+                      {row.values.map((v, i) => (
+                        <td key={i} className="px-4 py-4 text-center">
+                          <MarkIcon mark={v} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
+          <Reveal delay={250}>
+            <p className="mt-6 text-sm text-secondary-foreground/70">
+              Google lista endereços, Instagram mostra o que já é hype e iFood entrega em casa.
+              O Rolei ocupa o espaço vazio entre os três: a decisão de sair, no dia, com IA.
             </p>
           </Reveal>
         </div>
@@ -431,7 +645,7 @@ function PitchPage() {
             { icon: Rocket, t: "App funcional", d: "Home, busca, eventos, favoritos, perfil, painel do parceiro e autenticação já implementados." },
             { icon: Sparkles, t: "IA nativa", d: "Guia Rolei com linguagem natural conectado ao catálogo real — diferencial que nenhum concorrente local tem." },
             { icon: BarChart3, t: "Métricas para o parceiro", d: "Painel com visualizações e cliques: prova de ROI que sustenta retenção e upsell." },
-            { icon: Target, t: "Tese de sociedade", d: "Buscamos um sócio para acelerar aquisição de parceiros e expansão de bairros em SP." },
+            { icon: Target, t: "Tese de sociedade", d: "Buscamos um sócio para acelerar aquisição de parceiros e a expansão a partir de Curitiba." },
           ].map((c, i) => (
             <Reveal key={c.t} delay={i * 100}>
               <div className="h-full rounded-3xl bg-card p-6 shadow-card">
@@ -446,10 +660,10 @@ function PitchPage() {
         <Reveal delay={200}>
           <div className="mt-12 overflow-hidden rounded-3xl bg-gradient-hero p-8 text-center text-white shadow-glow sm:p-12">
             <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-              Vamos encher os rolês de São Paulo juntos?
+              Vamos encher os rolês do Brasil juntos?
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-white/85">
-              O produto está no ar. A oportunidade é de quem chega primeiro.
+              O produto está no ar, Curitiba é a praia e a oportunidade é de quem chega primeiro.
             </p>
             <Link
               to="/login"
