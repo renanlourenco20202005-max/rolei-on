@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, X, Send, Star, MapPin, Calendar, Loader2, SlidersHorizontal } from "lucide-react";
-import { places, events, type Place, type EventItem } from "@/lib/data";
+import { Sparkles, X, Send, Star, MapPin, Calendar, Loader2, SlidersHorizontal, Store } from "lucide-react";
+import { images } from "@/lib/data";
 import { askGuia, type GuiaSuggestion } from "@/lib/guia.functions";
 import { getPrefs } from "@/lib/store";
 
@@ -22,38 +22,18 @@ const DEFAULT_FILTERS: GuiaFilters = {
   onlyPromo: false,
 };
 
-function parseDistanceKm(distance: string): number {
-  const n = Number(distance.replace(",", ".").replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : Infinity;
-}
-
-function eventPriceLevel(e: EventItem): number {
-  if (e.free) return 1;
-  const n = Number((e.price ?? "").replace(/[^\d]/g, ""));
-  if (!Number.isFinite(n) || n === 0) return 1;
-  if (n <= 60) return 2;
-  if (n <= 120) return 3;
-  return 4;
-}
-
-function placeMatches(p: Place, f: GuiaFilters): boolean {
-  if (f.maxDistance !== null && parseDistanceKm(p.distance) > f.maxDistance) return false;
-  if (f.maxPrice !== null && p.price.length > f.maxPrice) return false;
-  if (f.category !== null && p.category !== f.category) return false;
-  if (f.minRating !== null && p.rating < f.minRating) return false;
-  if (f.onlyPromo && !p.promo) return false;
+function suggestionMatches(s: GuiaSuggestion, f: GuiaFilters): boolean {
+  // Itens sem o dado cadastrado (ex.: eventos sem distância/avaliação) são
+  // ocultados quando o filtro correspondente está ativo.
+  if (f.maxDistance !== null && (s.distanceKm === null || s.distanceKm > f.maxDistance)) return false;
+  if (f.maxPrice !== null && (s.priceLevel === null || s.priceLevel > f.maxPrice)) return false;
+  if (f.category !== null && s.category !== f.category) return false;
+  if (f.minRating !== null && (s.rating === null || s.rating < f.minRating)) return false;
+  if (f.onlyPromo && !s.hasPromo && !s.free) return false;
   return true;
 }
 
-function eventMatches(e: EventItem, f: GuiaFilters): boolean {
-  // Eventos não têm distância/avaliação cadastradas: filtros desses campos ocultam eventos.
-  if (f.maxDistance !== null) return false;
-  if (f.minRating !== null) return false;
-  if (f.maxPrice !== null && eventPriceLevel(e) > f.maxPrice) return false;
-  if (f.category !== null && e.category !== f.category) return false;
-  if (f.onlyPromo && !e.free) return false;
-  return true;
-}
+const FALLBACK_IMAGE = images.bar1;
 
 export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: () => void; initial?: string }) {
   const [input, setInput] = useState(initial ?? "");
@@ -66,31 +46,11 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
   const ask = useServerFn(askGuia);
 
   const filtered = useMemo(
-    () =>
-      results.filter((s) => {
-        if (s.type === "place") {
-          const p = places.find((pl) => pl.id === s.id);
-          return p ? placeMatches(p, filters) : false;
-        }
-        const e = events.find((ev) => ev.id === s.id);
-        return e ? eventMatches(e, filters) : false;
-      }),
+    () => results.filter((s) => suggestionMatches(s, filters)),
     [results, filters],
   );
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of results) {
-      if (s.type === "place") {
-        const p = places.find((pl) => pl.id === s.id);
-        if (p) set.add(p.category);
-      } else {
-        const e = events.find((ev) => ev.id === s.id);
-        if (e) set.add(e.category);
-      }
-    }
-    return Array.from(set);
-  }, [results]);
+  const categories = useMemo(() => Array.from(new Set(results.map((s) => s.category))), [results]);
 
   const activeFilterCount =
     (filters.maxDistance !== null ? 1 : 0) +
@@ -342,13 +302,7 @@ export function GuiaRolei({ open, onClose, initial }: { open: boolean; onClose: 
               </div>
             )}
 
-            {!loading && !error && filtered.map((s) =>
-              s.type === "place" ? (
-                <PlaceSuggestion key={`place-${s.id}`} id={s.id} reason={s.reason} onClose={onClose} />
-              ) : (
-                <EventSuggestion key={`event-${s.id}`} id={s.id} reason={s.reason} />
-              ),
-            )}
+            {!loading && !error && filtered.map((s) => <SuggestionCard key={`${s.type}-${s.id}`} s={s} onClose={onClose} />)}
 
             {!loading && (
               <button
@@ -388,58 +342,67 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-function PlaceSuggestion({ id, reason, onClose }: { id: string; reason: string; onClose: () => void }) {
-  const p = places.find((pl) => pl.id === id);
-  if (!p) return null;
-  return (
-    <Link
-      to="/place/$id"
-      params={{ id }}
-      onClick={onClose}
-      className="flex gap-3 rounded-2xl border border-border bg-card p-2 transition active:scale-[0.99]"
-    >
-      <img src={p.image} alt={p.name} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
-      <div className="min-w-0 flex-1 py-1">
-        <div className="flex items-center gap-1.5">
-          <p className="truncate text-sm font-bold">{p.name}</p>
-          {p.promo && <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">PROMO</span>}
-        </div>
-        <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{reason}</p>
-        <div className="mt-1.5 flex items-center gap-2 text-[11px]">
-          <span className="flex items-center gap-1 font-semibold text-foreground">
-            <Star className="h-3 w-3 fill-primary text-primary" /> {p.rating}
-          </span>
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <MapPin className="h-3 w-3" /> {p.distance}
-          </span>
-          <span className="text-muted-foreground">· {p.price}</span>
-        </div>
-      </div>
-    </Link>
-  );
-}
+function SuggestionCard({ s, onClose }: { s: GuiaSuggestion; onClose: () => void }) {
+  const isPartner = s.id.startsWith("partner-");
+  const badge = s.type === "event"
+    ? (s.free ? <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">GRÁTIS</span> : null)
+    : (s.hasPromo ? <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">PROMO</span> : null);
 
-function EventSuggestion({ id, reason }: { id: string; reason: string }) {
-  const e = events.find((ev) => ev.id === id);
-  if (!e) return null;
-  return (
-    <div className="flex gap-3 rounded-2xl border border-border bg-card p-2">
-      <img src={e.image} alt={e.title} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
-      <div className="min-w-0 flex-1 py-1">
-        <div className="flex items-center gap-1.5">
-          <p className="line-clamp-1 text-sm font-bold">{e.title}</p>
-          {e.free && <span className="flex-shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold text-accent">GRÁTIS</span>}
-        </div>
-        <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{reason}</p>
-        <div className="mt-1.5 flex items-center gap-2 text-[11px]">
-          <span className="flex items-center gap-1 font-semibold text-primary">
-            <Calendar className="h-3 w-3" /> {e.date}
-          </span>
-          <span className="flex items-center gap-1 truncate text-muted-foreground">
-            <MapPin className="h-3 w-3" /> {e.venue}
-          </span>
-        </div>
-      </div>
+  const meta = s.type === "event" ? (
+    <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+      {s.date && (
+        <span className="flex items-center gap-1 font-semibold text-primary">
+          <Calendar className="h-3 w-3" /> {s.date}
+        </span>
+      )}
+      {s.venue && (
+        <span className="flex items-center gap-1 truncate text-muted-foreground">
+          <MapPin className="h-3 w-3" /> {s.venue}
+        </span>
+      )}
+    </div>
+  ) : (
+    <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+      {s.rating !== null && (
+        <span className="flex items-center gap-1 font-semibold text-foreground">
+          <Star className="h-3 w-3 fill-primary text-primary" /> {s.rating}
+        </span>
+      )}
+      {s.distanceKm !== null && (
+        <span className="flex items-center gap-1 text-muted-foreground">
+          <MapPin className="h-3 w-3" /> {String(s.distanceKm).replace(".", ",")} km
+        </span>
+      )}
+      {s.priceLevel !== null && <span className="text-muted-foreground">· {"$".repeat(s.priceLevel)}</span>}
+      {isPartner && (
+        <span className="flex items-center gap-1 text-muted-foreground">
+          <Store className="h-3 w-3" /> Parceiro
+        </span>
+      )}
     </div>
   );
+
+  const body = (
+    <>
+      <img src={s.image ?? FALLBACK_IMAGE} alt={s.name} className="h-20 w-20 flex-shrink-0 rounded-xl object-cover" />
+      <div className="min-w-0 flex-1 py-1">
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-bold">{s.name}</p>
+          {badge}
+        </div>
+        <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{s.reason}</p>
+        {meta}
+      </div>
+    </>
+  );
+
+  const cls = "flex gap-3 rounded-2xl border border-border bg-card p-2 transition active:scale-[0.99]";
+  if (s.type === "place" && s.linkable) {
+    return (
+      <Link to="/place/$id" params={{ id: s.id }} onClick={onClose} className={cls}>
+        {body}
+      </Link>
+    );
+  }
+  return <div className={cls}>{body}</div>;
 }
