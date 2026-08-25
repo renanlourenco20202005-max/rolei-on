@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { listFavorites, setFavorite } from "@/lib/favorites.functions";
 
 export interface Prefs {
   company?: string[];
   likes: string[];
   budget?: string;
   onboarded?: boolean;
+  partnerSeen?: boolean;
+  notifications?: { promos?: boolean; events?: boolean; news?: boolean };
 }
 
 const PREFS_KEY = "rolei.prefs.v1";
@@ -34,21 +37,32 @@ export function usePrefs() {
   return prefs;
 }
 
+type Favs = { places: string[]; events: string[] };
+const EMPTY_FAVS: Favs = { places: [], events: [] };
+
 export function useFavorites() {
-  const [favs, setFavs] = useState<{ places: string[]; events: string[] }>({ places: [], events: [] });
+  const [favs, setFavs] = useState<Favs>(EMPTY_FAVS);
   useEffect(() => {
-    setFavs(read(FAVS_KEY, { places: [], events: [] }));
-    const h = () => setFavs(read(FAVS_KEY, { places: [], events: [] }));
+    setFavs(read(FAVS_KEY, EMPTY_FAVS));
+    const h = () => setFavs(read(FAVS_KEY, EMPTY_FAVS));
     window.addEventListener("rolei:favs", h);
+    // Sync from cloud (cloud wins when available)
+    listFavorites()
+      .then((remote) => {
+        localStorage.setItem(FAVS_KEY, JSON.stringify(remote));
+        window.dispatchEvent(new Event("rolei:favs"));
+      })
+      .catch(() => { /* offline or signed out: keep local */ });
     return () => window.removeEventListener("rolei:favs", h);
   }, []);
   const toggle = (kind: "places" | "events", id: string) => {
-    const current = read<{ places: string[]; events: string[] }>(FAVS_KEY, { places: [], events: [] });
+    const current = read<Favs>(FAVS_KEY, EMPTY_FAVS);
     const set = new Set(current[kind]);
     set.has(id) ? set.delete(id) : set.add(id);
     const next = { ...current, [kind]: Array.from(set) };
     localStorage.setItem(FAVS_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event("rolei:favs"));
+    setFavorite({ data: { kind, itemId: id, saved: set.has(id) } }).catch(() => { /* keep local only */ });
   };
   return { favs, toggle };
 }
