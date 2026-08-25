@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/search")({
   component: SearchPage,
 });
 
-const filters = ["Perto", "Promoções", "Música ao vivo", "Casais", "Happy Hour", "Café", "Gastronomia", "Festa"];
+const filters = ["Perto", "Promoções", "Música ao vivo", "Casais", "Happy Hour", "Café", "Gastronomia", "Festa", "After"];
 
 function SearchPage() {
   const navigate = useNavigate();
@@ -35,6 +35,7 @@ function SearchPage() {
       if (active.includes("Café") && p.category !== "Café") return false;
       if (active.includes("Gastronomia") && !["Gastronomia", "Restaurante"].includes(p.category)) return false;
       if (active.includes("Festa") && p.category !== "Festa") return false;
+      if (active.includes("After") && p.category !== "After") return false;
       return true;
     });
   }, [query, active]);

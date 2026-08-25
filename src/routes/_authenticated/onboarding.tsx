@@ -21,7 +21,7 @@ const steps = [
     title: "O que você gosta?",
     subtitle: "Escolha quantos quiser",
     multi: true,
-    options: ["Bares", "Restaurantes", "Música ao vivo", "Festas", "Eventos", "Cafés", "Gastronomia"],
+    options: ["Bares", "Restaurantes", "Música ao vivo", "Festas", "Baladas", "After", "Eventos", "Cafés", "Gastronomia"],
   },
   {
     key: "budget",
