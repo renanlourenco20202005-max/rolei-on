@@ -9,7 +9,7 @@ import event1 from "@/assets/event-1.jpg";
 
 export const images = { bar1, music1, restaurant1, happyhour1, party1, cafe1, food1, event1 };
 
-export type Category = "Bar" | "Restaurante" | "Música ao vivo" | "Festa" | "Evento" | "Café" | "Gastronomia";
+export type Category = "Bar" | "Restaurante" | "Música ao vivo" | "Festa" | "Evento" | "Café" | "Gastronomia" | "After";
 
 export interface Place {
   id: string;
@@ -155,6 +155,24 @@ export const places: Place[] = [
     promo: "Combo burger + chope por R$ 49",
     vibes: ["amigos", "burger", "cerveja", "gastronomia"],
   },
+  {
+    id: "aurora-after",
+    name: "Aurora After Hours",
+    category: "After",
+    image: party1,
+    distance: "2,8 km",
+    rating: 4.6,
+    reviews: 754,
+    price: "$$",
+    tags: ["Sunrise set", "Madrugada"],
+    description: "O point oficial de quem não quer que a noite acabe: pista envolvente, sunrise sets e café da manhã na saída.",
+    address: "R. Mateus Leme, 1250 — Centro",
+    hours: "Sáb–Dom · 04h–12h",
+    whatsapp: "+55 11 94444-8888",
+    instagram: "@auroraafterhours",
+    promo: "Entrada free com pulseira de festa parceira",
+    vibes: ["after", "balada", "madrugada", "música"],
+  },
 ];
 
 export interface EventItem {
@@ -224,6 +242,17 @@ export const events: EventItem[] = [
     venue: "Neon Underground",
     category: "Festa",
   },
+  {
+    id: "sunrise-after",
+    title: "Sunrise After · Aurora",
+    image: music1,
+    date: "Domingo · 05h",
+    when: "fimDeSemana",
+    free: false,
+    price: "R$ 60",
+    venue: "Aurora After Hours",
+    category: "After",
+  },
 ];
 
 export const sections = [
@@ -232,5 +261,6 @@ export const sections = [
   { id: "music", title: "🎵 Música ao vivo", filter: (p: Place) => p.category === "Música ao vivo" },
   { id: "couple", title: "❤️ Para casais", filter: (p: Place) => p.vibes.includes("romântico") },
   { id: "gastro", title: "🍔 Gastronomia", filter: (p: Place) => p.category === "Gastronomia" || p.category === "Restaurante" },
+  { id: "after", title: "🌙 After hours", filter: (p: Place) => p.category === "After" },
   { id: "near", title: "📍 Perto de você", filter: (_: Place) => true },
 ];
