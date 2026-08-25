@@ -91,6 +91,7 @@ const plans = [
   {
     name: "Gratuito",
     price: "R$ 0",
+    suffix: null as string | null,
     desc: "Presença básica no app",
     features: [
       "Perfil do estabelecimento",
@@ -103,7 +104,8 @@ const plans = [
   },
   {
     name: "Destaque",
-    price: "R$ 199/mês",
+    price: "R$ 199",
+    suffix: "/mês",
     desc: "Visibilidade e conversão",
     features: [
       "Destaque nas seções da home",
@@ -116,7 +118,8 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "R$ 399/mês",
+    price: "R$ 399",
+    suffix: "/mês",
     desc: "Domínio de categoria e bairro",
     features: [
       "Tudo do plano Destaque",
@@ -425,7 +428,10 @@ function PitchPage() {
                     </span>
                   )}
                   <h3 className="text-lg font-bold">{p.name}</h3>
-                  <p className="mt-1 text-3xl font-extrabold">{p.price}</p>
+                  <p className="mt-1 whitespace-nowrap text-3xl font-extrabold">
+                    {p.price}
+                    {p.suffix && <span className="text-base font-bold opacity-70">{p.suffix}</span>}
+                  </p>
                   <p className={`mt-1 text-xs ${p.highlight ? "text-white/80" : "text-secondary-foreground/60"}`}>{p.desc}</p>
                   <ul className="mt-5 space-y-2.5 text-sm">
                     {p.features.map((f) => (
