@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, MapPin, Calendar, Trash2, Star } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { places, events } from "@/lib/data";
+import { usePlaces, useEvents } from "@/lib/places-queries";
 import { listHistory, clearHistory } from "@/lib/history.functions";
 
 export const Route = createFileRoute("/_authenticated/history")({
@@ -22,10 +22,13 @@ function HistoryPage() {
   const clear = useServerFn(clearHistory);
   const queryClient = useQueryClient();
 
-  const { data: history = [], isLoading } = useQuery({
+  const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["history"],
     queryFn: () => fetchHistory(),
   });
+  const { data: places = [], isLoading: placesLoading } = usePlaces();
+  const { data: events = [], isLoading: eventsLoading } = useEvents();
+  const isLoading = historyLoading || placesLoading || eventsLoading;
 
   const clearMutation = useMutation({
     mutationFn: () => clear(),

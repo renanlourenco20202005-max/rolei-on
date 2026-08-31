@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ArrowLeft, SlidersHorizontal, Map as MapIcon, List, Search as SearchIcon, Star, MapPin, Heart } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { places } from "@/lib/data";
+import { usePlaces } from "@/lib/places-queries";
+import type { Place } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 import { Link } from "@tanstack/react-router";
 
@@ -21,6 +22,7 @@ function SearchPage() {
   const [query, setQuery] = useState(q);
   const [active, setActive] = useState<string[]>([]);
   const { favs, toggle } = useFavorites();
+  const { data: places = [] } = usePlaces();
 
   const results = useMemo(() => {
     return places.filter((p) => {
@@ -38,7 +40,7 @@ function SearchPage() {
       if (active.includes("After") && p.category !== "After") return false;
       return true;
     });
-  }, [query, active]);
+  }, [query, active, places]);
 
   return (
     <AppShell>
@@ -163,7 +165,7 @@ function SearchPage() {
   );
 }
 
-function MapView({ results }: { results: typeof places }) {
+function MapView({ results }: { results: Place[] }) {
   return (
     <div className="relative mx-5 mt-4 h-[520px] overflow-hidden rounded-3xl bg-muted shadow-card">
       <div

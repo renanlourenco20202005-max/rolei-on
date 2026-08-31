@@ -4,8 +4,9 @@ import { Search, Sparkles, MapPin, Bell } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PlaceCard } from "@/components/PlaceCard";
 import { GuiaRolei } from "@/components/GuiaRolei";
-import { places, sections } from "@/lib/data";
+import { sections } from "@/lib/data";
 import { usePrefs } from "@/lib/store";
+import { usePlaces } from "@/lib/places-queries";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Rolei — Início" }] }),
@@ -24,6 +25,7 @@ function Home() {
   const navigate = useNavigate();
   const [aiOpen, setAiOpen] = useState(false);
   const [aiInitial, setAiInitial] = useState<string | undefined>();
+  const { data: places = [], isLoading } = usePlaces();
 
   return (
     <AppShell>
@@ -78,7 +80,14 @@ function Home() {
       </div>
 
       <div className="mt-2 space-y-7 pt-4">
-        {sections.map((sec) => {
+        {isLoading && (
+          <div className="flex gap-3 px-5 pb-2">
+            {[0, 1].map((i) => (
+              <div key={i} className="aspect-[4/5] w-[78vw] max-w-[360px] flex-shrink-0 animate-pulse rounded-3xl bg-muted" />
+            ))}
+          </div>
+        )}
+        {!isLoading && sections.map((sec) => {
           const items = places.filter(sec.filter);
           if (items.length === 0) return null;
           return (

@@ -14,6 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
+      places: {
+        Row: {
+          address: string
+          category: string
+          city: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string
+          instagram: string
+          is_published: boolean
+          is_sponsored: boolean
+          latitude: number
+          longitude: number
+          name: string
+          neighborhood: string
+          partner_id: string | null
+          photos: Json
+          price: string
+          promo_text: string | null
+          rating: number
+          reviews_count: number
+          tags: string[]
+          updated_at: string
+          vibes: string[]
+          whatsapp: string
+          hours: string
+        }
+        Insert: {
+          address?: string
+          category: string
+          city?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string
+          instagram?: string
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          neighborhood?: string
+          partner_id?: string | null
+          photos?: Json
+          price?: string
+          promo_text?: string | null
+          rating?: number
+          reviews_count?: number
+          tags?: string[]
+          updated_at?: string
+          vibes?: string[]
+          whatsapp?: string
+          hours?: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          city?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string
+          instagram?: string
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          neighborhood?: string
+          partner_id?: string | null
+          photos?: Json
+          price?: string
+          promo_text?: string | null
+          rating?: number
+          reviews_count?: number
+          tags?: string[]
+          updated_at?: string
+          vibes?: string[]
+          whatsapp?: string
+          hours?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          ends_at: string | null
+          id: string
+          image_url: string
+          is_free: boolean
+          is_published: boolean
+          is_sponsored: boolean
+          latitude: number | null
+          longitude: number | null
+          partner_id: string | null
+          place_id: string | null
+          price_text: string | null
+          starts_at: string
+          title: string
+          updated_at: string
+          venue_name: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string
+          is_free?: boolean
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          partner_id?: string | null
+          place_id?: string | null
+          price_text?: string | null
+          starts_at: string
+          title: string
+          updated_at?: string
+          venue_name?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string
+          is_free?: boolean
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          partner_id?: string | null
+          place_id?: string | null
+          price_text?: string | null
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string

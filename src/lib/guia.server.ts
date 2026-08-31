@@ -1,6 +1,20 @@
-import { createClient } from "@supabase/supabase-js";
-import { places, events } from "@/lib/data";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+
+// Mesmo ponto de referência usado como fallback de geolocalização no cliente
+// (Vila Madalena). Usado só para dar um "distanceKm" plausível ao catálogo
+// que a IA usa — a distância exata de verdade é recalculada no front-end.
+const FALLBACK_COORDS = { latitude: -23.5558, longitude: -46.6896 };
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export interface GuiaPrefs {
   company?: string[];
@@ -38,11 +52,6 @@ const PRICE_LABEL: Record<string, string> = {
   $$$$: "acima de R$200 por pessoa",
 };
 
-function parseDistanceKm(distance: string): number | null {
-  const n = Number(distance.replace(",", ".").replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : null;
-}
-
 function eventPriceLevel(free: boolean, price?: string): number {
   if (free) return 1;
   const n = Number((price ?? "").replace(/[^\d]/g, ""));
@@ -67,62 +76,84 @@ function promosText(promos: unknown): string {
     .join("; ");
 }
 
-function baseCatalog(): CatalogEntry[] {
-  const placeEntries: CatalogEntry[] = places.map((p) => ({
-    type: "place",
-    id: p.id,
-    reason: "",
-    name: p.name,
-    category: p.category,
-    image: p.image,
-    priceLevel: p.price.length,
-    rating: p.rating,
-    distanceKm: parseDistanceKm(p.distance),
-    hasPromo: Boolean(p.promo),
-    free: false,
-    date: null,
-    venue: null,
-    linkable: true,
-    searchText: `id="${p.id}" tipo=local | ${p.name} (${p.category}) | faixa de preço: ${PRICE_LABEL[p.price]} | avaliação: ${p.rating}/5 (${p.reviews} avaliações) | distância: ${p.distance} | vibes: ${p.vibes.join(", ")} | tags: ${p.tags.join(", ")} | ${p.description}${p.promo ? ` | promoção: ${p.promo}` : ""}`,
-  }));
+function createPublicClient(): SupabaseClient<Database> | null {
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) return null;
+  return createClient<Database>(url, key, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => {
+        const h = new Headers(init?.headers);
+        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
+        h.set("apikey", key);
+        return fetch(input, { ...init, headers: h });
+      },
+    },
+  });
+}
 
-  const eventEntries: CatalogEntry[] = events.map((e) => ({
-    type: "event",
-    id: e.id,
-    reason: "",
-    name: e.title,
-    category: e.category,
-    image: e.image,
-    priceLevel: eventPriceLevel(e.free, e.price),
-    rating: null,
-    distanceKm: null,
-    hasPromo: e.free,
-    free: e.free,
-    date: e.date,
-    venue: e.venue,
-    linkable: false,
-    searchText: `id="${e.id}" tipo=evento | ${e.title} | ${e.date} | ${e.free ? "gratuito" : `pago (${e.price ?? ""})`} | local: ${e.venue} | categoria: ${e.category}`,
-  }));
+async function placesEventsCatalog(): Promise<CatalogEntry[]> {
+  const supabasePublic = createPublicClient();
+  if (!supabasePublic) return [];
+  try {
+    const [placesRes, eventsRes] = await Promise.all([
+      supabasePublic.from("places").select("*"),
+      supabasePublic.from("events").select("*"),
+    ]);
 
-  return [...placeEntries, ...eventEntries];
+    const placeEntries: CatalogEntry[] = (placesRes.data ?? []).map((p) => {
+      const distanceKm = haversineKm(FALLBACK_COORDS.latitude, FALLBACK_COORDS.longitude, p.latitude, p.longitude);
+      return {
+        type: "place",
+        id: p.id,
+        reason: "",
+        name: p.name,
+        category: p.category,
+        image: p.image_url || null,
+        priceLevel: p.price.length,
+        rating: p.rating,
+        distanceKm,
+        hasPromo: Boolean(p.promo_text),
+        free: false,
+        date: null,
+        venue: null,
+        linkable: true,
+        searchText: `id="${p.id}" tipo=local | ${p.name} (${p.category}) | faixa de preço: ${PRICE_LABEL[p.price] ?? p.price} | avaliação: ${p.rating}/5 (${p.reviews_count} avaliações) | distância: ${distanceKm.toFixed(1)} km | vibes: ${(p.vibes ?? []).join(", ")} | tags: ${(p.tags ?? []).join(", ")} | ${p.description}${p.promo_text ? ` | promoção: ${p.promo_text}` : ""}`,
+      };
+    });
+
+    const eventEntries: CatalogEntry[] = (eventsRes.data ?? []).map((e) => {
+      const dateLabel = new Date(e.starts_at).toLocaleString("pt-BR", { weekday: "long", hour: "2-digit", minute: "2-digit" });
+      return {
+        type: "event",
+        id: e.id,
+        reason: "",
+        name: e.title,
+        category: e.category,
+        image: e.image_url || null,
+        priceLevel: eventPriceLevel(e.is_free, e.price_text ?? undefined),
+        rating: null,
+        distanceKm: null,
+        hasPromo: e.is_free,
+        free: e.is_free,
+        date: dateLabel,
+        venue: e.venue_name,
+        linkable: false,
+        searchText: `id="${e.id}" tipo=evento | ${e.title} | ${dateLabel} | ${e.is_free ? "gratuito" : `pago (${e.price_text ?? ""})`} | local: ${e.venue_name} | categoria: ${e.category}`,
+      };
+    });
+
+    return [...placeEntries, ...eventEntries];
+  } catch {
+    return [];
+  }
 }
 
 async function partnerCatalog(): Promise<CatalogEntry[]> {
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-  if (!url || !key) return [];
   try {
-    const supabasePublic = createClient<Database>(url, key, {
-      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-      global: {
-        fetch: (input, init) => {
-          const h = new Headers(init?.headers);
-          if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-          h.set("apikey", key);
-          return fetch(input, { ...init, headers: h });
-        },
-      },
-    });
+    const supabasePublic = createPublicClient();
+    if (!supabasePublic) return [];
     const { data, error } = await supabasePublic
       .from("partner_profiles")
       .select("user_id, name, category, description, address, hours, cover, promos")
@@ -166,7 +197,7 @@ export async function askGuiaAI(message: string, prefs: GuiaPrefs): Promise<Guia
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("Guia Rolei não está configurado (LOVABLE_API_KEY ausente).");
 
-  const catalog = [...baseCatalog(), ...(await partnerCatalog())];
+  const catalog = [...(await placesEventsCatalog()), ...(await partnerCatalog())];
 
   const prefsText = [
     prefs.company?.length ? `Companhia habitual: ${prefs.company.join(", ")}` : null,
@@ -239,11 +270,11 @@ ${catalog.map((c) => `- ${c.searchText}`).join("\n")}`;
   return fromAI.length > 0 ? fromAI : localFallback(message, catalog);
 }
 
-const PRICE_RANGE: Record<string, [number, number]> = {
-  $: [0, 50],
-  $$: [50, 100],
-  $$$: [100, 200],
-  $$$$: [200, 9999],
+const PRICE_RANGE_BY_LEVEL: Record<number, [number, number]> = {
+  1: [0, 50],
+  2: [50, 100],
+  3: [100, 200],
+  4: [200, 9999],
 };
 
 function normalize(text: string): string {
@@ -269,9 +300,8 @@ function localFallback(message: string, catalog: CatalogEntry[]): GuiaSuggestion
     .filter((c) => c.type === "place")
     .filter((c) => {
       if (!budget) return true;
-      const base = places.find((p) => p.id === c.id);
-      if (!base) return true; // parceiros sem faixa de preço não são excluídos por orçamento
-      return PRICE_RANGE[base.price][0] <= budget;
+      if (c.priceLevel === null) return true; // parceiros sem faixa de preço não são excluídos por orçamento
+      return PRICE_RANGE_BY_LEVEL[c.priceLevel][0] <= budget;
     })
     .map((c) => {
       const hay = normalize([c.name, c.category, c.searchText].join(" "));

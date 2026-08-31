@@ -1,21 +1,22 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle, Navigation, Calendar, Tag } from "lucide-react";
-import { places } from "@/lib/data";
 import { useFavorites } from "@/lib/store";
 import { recordVisit } from "@/lib/history.functions";
 import { RouteErrorFallback, RouteNotFoundFallback } from "@/components/RouteFallbacks";
+import { supabase } from "@/integrations/supabase/client";
+import { mapPlace, useUserLocation, type PlaceRow } from "@/lib/places-queries";
 
 export const Route = createFileRoute("/_authenticated/place/$id")({
-  loader: ({ params }) => {
-    const place = places.find((p) => p.id === params.id);
-    if (!place) throw notFound();
-    return { place };
+  loader: async ({ params }) => {
+    const { data, error } = await supabase.from("places").select("*").eq("id", params.id).single();
+    if (error || !data) throw notFound();
+    return { placeRow: data as unknown as PlaceRow };
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: `${loaderData?.place.name ?? "Estabelecimento"} — Rolei` },
-      { name: "description", content: loaderData?.place.description ?? "" },
+      { title: `${loaderData?.placeRow.name ?? "Estabelecimento"} — Rolei` },
+      { name: "description", content: loaderData?.placeRow.description ?? "" },
     ],
   }),
   errorComponent: ({ error, reset }) => <RouteErrorFallback error={error} reset={reset} />,
@@ -30,7 +31,9 @@ const reviews = [
 ];
 
 function PlaceDetail() {
-  const { place } = Route.useLoaderData();
+  const { placeRow } = Route.useLoaderData();
+  const { latitude, longitude } = useUserLocation();
+  const place = mapPlace(placeRow, latitude, longitude);
   const navigate = useNavigate();
   const { favs, toggle } = useFavorites();
   const saved = favs.places.includes(place.id);

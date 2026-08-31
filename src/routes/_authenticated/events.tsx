@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Calendar, MapPin, Heart } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { events, type EventItem } from "@/lib/data";
+import type { EventItem } from "@/lib/data";
+import { useEvents } from "@/lib/places-queries";
 import { useFavorites } from "@/lib/store";
 import { recordVisit } from "@/lib/history.functions";
 
@@ -23,6 +24,7 @@ const tabs = [
 function EventsPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("todos");
   const { favs, toggle } = useFavorites();
+  const { data: events = [], isLoading } = useEvents();
 
   const list = useMemo(() => {
     return events.filter((e) => {
@@ -31,7 +33,7 @@ function EventsPage() {
       if (tab === "pago") return !e.free;
       return e.when === tab;
     });
-  }, [tab]);
+  }, [tab, events]);
 
   return (
     <AppShell>
@@ -61,7 +63,7 @@ function EventsPage() {
             toggle("events", e.id);
           }} />
         ))}
-        {list.length === 0 && (
+        {!isLoading && list.length === 0 && (
           <div className="rounded-3xl bg-card p-8 text-center shadow-card">
             <p className="text-sm font-semibold">Sem eventos por aqui.</p>
             <p className="mt-1 text-xs text-muted-foreground">Volte mais tarde — novos rolês toda hora.</p>

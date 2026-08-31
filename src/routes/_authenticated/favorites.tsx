@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Heart, MapPin, Calendar, Star } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { places, events } from "@/lib/data";
+import { usePlaces, useEvents } from "@/lib/places-queries";
 import { useFavorites } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/favorites")({
@@ -13,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/favorites")({
 function Favorites() {
   const { favs, toggle } = useFavorites();
   const [tab, setTab] = useState<"places" | "events">("places");
+  const { data: places = [] } = usePlaces();
+  const { data: events = [] } = useEvents();
 
   const savedPlaces = places.filter((p) => favs.places.includes(p.id));
   const savedEvents = events.filter((e) => favs.events.includes(e.id));
