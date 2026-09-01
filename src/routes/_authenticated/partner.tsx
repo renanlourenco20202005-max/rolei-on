@@ -41,7 +41,8 @@ interface EventItem {
 function emptyProfile(): PartnerProfileInput {
   return {
     name: "", category: "Bar", description: "", address: "", hours: "",
-    whatsapp: "", instagram: "", cover: "", photos: [], promos: [], events: [],
+    whatsapp: "", instagram: "", price: "$$", cover: "", photos: [], promos: [], events: [],
+    latitude: null, longitude: null,
   };
 }
 
@@ -66,10 +67,13 @@ function PartnerPanel() {
         hours: row.hours ?? "",
         whatsapp: row.whatsapp ?? "",
         instagram: row.instagram ?? "",
+        price: (row.price as PartnerProfileInput["price"]) ?? "$$",
         cover: row.cover ?? "",
         photos: (row.photos as string[]) ?? [],
         promos: (row.promos as unknown as Promo[]) ?? [],
         events: (row.events as unknown as EventItem[]) ?? [],
+        latitude: row.latitude ?? null,
+        longitude: row.longitude ?? null,
       }
     : emptyProfile();
 
@@ -123,6 +127,12 @@ function PartnerPanel() {
             <h1 className="truncate text-xl font-extrabold">
               {profile.name || "Meu estabelecimento"}
             </h1>
+            <p className={`mt-0.5 flex items-center gap-1 text-[10px] font-bold ${
+              profile.latitude !== null ? "text-white/90" : "text-white/70"
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${profile.latitude !== null ? "bg-green-400" : "bg-white/50"}`} />
+              {profile.latitude !== null ? "Visível no app" : "Não publicado — defina a localização"}
+            </p>
           </div>
         </div>
       </header>
@@ -249,11 +259,59 @@ function ProfileTab({
   profile, onSave, saving,
 }: { profile: PartnerProfileInput; onSave: (p: PartnerProfileInput) => void; saving: boolean }) {
   const [form, setForm] = useState(profile);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
   useEffect(() => setForm(profile), [profile]);
   const set = <K extends keyof PartnerProfileInput>(k: K, v: PartnerProfileInput[K]) =>
     setForm({ ...form, [k]: v });
+
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      setLocError("Seu navegador não suporta geolocalização.");
+      return;
+    }
+    setLocating(true);
+    setLocError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+        setLocating(false);
+      },
+      () => {
+        setLocError("Não foi possível pegar sua localização. Verifique a permissão do navegador.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  };
+
   return (
     <div className="space-y-4">
+      <div className="rounded-2xl bg-card p-4 shadow-card">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold">Localização do estabelecimento</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {form.latitude !== null
+                ? `Capturada · ${form.latitude.toFixed(5)}, ${form.longitude!.toFixed(5)}`
+                : "Sem localização — seu local não aparece no app até isso ser definido."}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={captureLocation}
+          disabled={locating}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary/10 py-3 text-sm font-bold text-primary disabled:opacity-60"
+        >
+          <MapPin className="h-4 w-4" />
+          {locating ? "Localizando..." : form.latitude !== null ? "Atualizar localização atual" : "Usar minha localização atual"}
+        </button>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Toque nesse botão estando fisicamente no estabelecimento, pra registrar o ponto certo no mapa.
+        </p>
+        {locError && <p className="mt-2 text-[11px] font-semibold text-destructive">{locError}</p>}
+      </div>
+
       <Field label="Nome do estabelecimento" value={form.name} onChange={(v) => set("name", v)} />
       <Field label="Categoria" value={form.category} onChange={(v) => set("category", v)} />
       <Field label="Descrição" value={form.description} onChange={(v) => set("description", v)} textarea />
@@ -263,8 +321,26 @@ function ProfileTab({
         <Field label="WhatsApp" value={form.whatsapp} onChange={(v) => set("whatsapp", v)} />
         <Field label="Instagram" value={form.instagram} onChange={(v) => set("instagram", v)} />
       </div>
+      <label className="block">
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          Faixa de preço
+        </span>
+        <div className="grid grid-cols-4 gap-2">
+          {(["$", "$$", "$$$", "$$$$"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => set("price", p)}
+              className={`rounded-2xl py-2.5 text-sm font-bold ${
+                form.price === p ? "bg-primary text-primary-foreground shadow-glow" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </label>
       <button
-        onClick={() => { onSave(form); toast.success("Perfil atualizado"); }}
+        onClick={() => { onSave(form); toast.success(form.latitude !== null ? "Perfil atualizado e publicado" : "Perfil salvo (defina a localização pra publicar)"); }}
         disabled={saving}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-60"
       >
