@@ -67,7 +67,7 @@ function PartnerPanel() {
         hours: row.hours ?? "",
         whatsapp: row.whatsapp ?? "",
         instagram: row.instagram ?? "",
-        price: (row.price as PartnerProfileInput["price"]) ?? "$$",
+        price: (row.price_text as PartnerProfileInput["price"]) ?? "$$",
         cover: row.cover ?? "",
         photos: (row.photos as string[]) ?? [],
         promos: (row.promos as unknown as Promo[]) ?? [],
