@@ -127,8 +127,11 @@ export type Database = {
           hours: string
           id: string
           instagram: string
+          latitude: number | null
+          longitude: number | null
           name: string
           photos: Json
+          price_text: string | null
           promos: Json
           updated_at: string
           user_id: string
@@ -144,8 +147,11 @@ export type Database = {
           hours?: string
           id?: string
           instagram?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           photos?: Json
+          price_text?: string | null
           promos?: Json
           updated_at?: string
           user_id: string
@@ -161,8 +167,11 @@ export type Database = {
           hours?: string
           id?: string
           instagram?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           photos?: Json
+          price_text?: string | null
           promos?: Json
           updated_at?: string
           user_id?: string
