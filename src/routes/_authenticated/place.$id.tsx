@@ -39,9 +39,59 @@ function PlaceDetail() {
   const { favs, toggle } = useFavorites();
   const saved = favs.places.includes(place.id);
 
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [bookDate, setBookDate] = useState("");
+  const [bookTime, setBookTime] = useState("20:00");
+  const [bookPeople, setBookPeople] = useState(2);
+  const [bookName, setBookName] = useState("");
+
   useEffect(() => {
     recordVisit({ data: { kind: "places", itemId: place.id } }).catch(() => {});
   }, [place.id]);
+
+  const phone = place.whatsapp.replace(/\D/g, "");
+  const destination = `${placeRow.latitude},${placeRow.longitude}`;
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&destination_place_id=&travelmode=driving`;
+  const wazeUrl = `https://waze.com/ul?ll=${destination}&navigate=yes`;
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(
+    `Olá, ${place.name}! Encontrei vocês no Rolei e queria saber mais sobre o rolê de hoje.`,
+  )}`;
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = {
+      title: place.name,
+      text: `${place.name} — ${place.category} em Curitiba. Achei no Rolei!`,
+      url,
+    };
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado!");
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
+      toast.error("Não foi possível compartilhar agora.");
+    }
+  };
+
+  const sendBooking = () => {
+    if (!bookDate) {
+      toast.error("Escolha a data da reserva.");
+      return;
+    }
+    const prettyDate = new Date(`${bookDate}T00:00:00`).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+    const text = `Olá, ${place.name}! Quero reservar uma mesa pelo Rolei.\n\n👤 Nome: ${bookName || "(a confirmar)"}\n📅 Data: ${prettyDate}\n🕗 Horário: ${bookTime}\n👥 Pessoas: ${bookPeople}\n\nTem disponibilidade?`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    setBookOpen(false);
+    toast.success("Pedido de reserva enviado no WhatsApp!");
+  };
 
   return (
     <div className="app-shell pb-32">
