@@ -10,102 +10,10 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      places: {
-        Row: {
-          address: string
-          category: string
-          city: string
-          created_at: string
-          description: string
-          id: string
-          image_url: string
-          instagram: string
-          is_published: boolean
-          is_sponsored: boolean
-          latitude: number
-          longitude: number
-          name: string
-          neighborhood: string
-          partner_id: string | null
-          photos: Json
-          price: string
-          promo_text: string | null
-          rating: number
-          reviews_count: number
-          tags: string[]
-          updated_at: string
-          vibes: string[]
-          whatsapp: string
-          hours: string
-        }
-        Insert: {
-          address?: string
-          category: string
-          city?: string
-          created_at?: string
-          description?: string
-          id?: string
-          image_url?: string
-          instagram?: string
-          is_published?: boolean
-          is_sponsored?: boolean
-          latitude: number
-          longitude: number
-          name: string
-          neighborhood?: string
-          partner_id?: string | null
-          photos?: Json
-          price?: string
-          promo_text?: string | null
-          rating?: number
-          reviews_count?: number
-          tags?: string[]
-          updated_at?: string
-          vibes?: string[]
-          whatsapp?: string
-          hours?: string
-        }
-        Update: {
-          address?: string
-          category?: string
-          city?: string
-          created_at?: string
-          description?: string
-          id?: string
-          image_url?: string
-          instagram?: string
-          is_published?: boolean
-          is_sponsored?: boolean
-          latitude?: number
-          longitude?: number
-          name?: string
-          neighborhood?: string
-          partner_id?: string | null
-          photos?: Json
-          price?: string
-          promo_text?: string | null
-          rating?: number
-          reviews_count?: number
-          tags?: string[]
-          updated_at?: string
-          vibes?: string[]
-          whatsapp?: string
-          hours?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "places_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "partner_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       events: {
         Row: {
           category: string
@@ -169,17 +77,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "events_place_id_fkey"
-            columns: ["place_id"]
-            isOneToOne: false
-            referencedRelation: "places"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "events_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
             referencedColumns: ["id"]
           },
         ]
@@ -219,11 +127,8 @@ export type Database = {
           hours: string
           id: string
           instagram: string
-          latitude: number | null
-          longitude: number | null
           name: string
           photos: Json
-          price: string
           promos: Json
           updated_at: string
           user_id: string
@@ -239,11 +144,8 @@ export type Database = {
           hours?: string
           id?: string
           instagram?: string
-          latitude?: number | null
-          longitude?: number | null
           name?: string
           photos?: Json
-          price?: string
           promos?: Json
           updated_at?: string
           user_id: string
@@ -259,17 +161,106 @@ export type Database = {
           hours?: string
           id?: string
           instagram?: string
-          latitude?: number | null
-          longitude?: number | null
           name?: string
           photos?: Json
-          price?: string
           promos?: Json
           updated_at?: string
           user_id?: string
           whatsapp?: string
         }
         Relationships: []
+      }
+      places: {
+        Row: {
+          address: string
+          category: string
+          city: string
+          created_at: string
+          description: string
+          hours: string
+          id: string
+          image_url: string
+          instagram: string
+          is_published: boolean
+          is_sponsored: boolean
+          latitude: number
+          longitude: number
+          name: string
+          neighborhood: string
+          partner_id: string | null
+          photos: Json
+          price: string
+          promo_text: string | null
+          rating: number
+          reviews_count: number
+          tags: string[]
+          updated_at: string
+          vibes: string[]
+          whatsapp: string
+        }
+        Insert: {
+          address?: string
+          category: string
+          city?: string
+          created_at?: string
+          description?: string
+          hours?: string
+          id?: string
+          image_url?: string
+          instagram?: string
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          neighborhood?: string
+          partner_id?: string | null
+          photos?: Json
+          price?: string
+          promo_text?: string | null
+          rating?: number
+          reviews_count?: number
+          tags?: string[]
+          updated_at?: string
+          vibes?: string[]
+          whatsapp?: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          city?: string
+          created_at?: string
+          description?: string
+          hours?: string
+          id?: string
+          image_url?: string
+          instagram?: string
+          is_published?: boolean
+          is_sponsored?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          neighborhood?: string
+          partner_id?: string | null
+          photos?: Json
+          price?: string
+          promo_text?: string | null
+          rating?: number
+          reviews_count?: number
+          tags?: string[]
+          updated_at?: string
+          vibes?: string[]
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
@@ -349,12 +340,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -378,11 +369,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -403,11 +394,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -428,11 +419,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -445,11 +436,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
