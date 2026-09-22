@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate, notFound } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle, Navigation, Calendar, Tag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft, Heart, Share2, Star, MapPin, Clock, Instagram, MessageCircle, Navigation, Calendar, Tag, X } from "lucide-react";
 import { useFavorites } from "@/lib/store";
 import { recordVisit } from "@/lib/history.functions";
 import { RouteErrorFallback, RouteNotFoundFallback } from "@/components/RouteFallbacks";
