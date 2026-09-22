@@ -33,7 +33,7 @@ function Home() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 text-primary" />
-            Vila Madalena · São Paulo
+            Batel · Curitiba
           </div>
           <button className="grid h-10 w-10 place-items-center rounded-full bg-card shadow-card">
             <Bell className="h-4.5 w-4.5 text-secondary" />

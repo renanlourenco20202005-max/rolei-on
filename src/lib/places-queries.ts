@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category, Place, EventItem } from "@/lib/data";
 
-// Centro de Vila Madalena — usado como fallback enquanto a geolocalização
+// Centro do Batel (Curitiba) — usado como fallback enquanto a geolocalização
 // do navegador não responde ou é negada pelo usuário.
-const FALLBACK_COORDS = { latitude: -23.5558, longitude: -46.6896 };
+const FALLBACK_COORDS = { latitude: -25.4426, longitude: -49.2891 };
 
 export function useUserLocation() {
   const [coords, setCoords] = useState(FALLBACK_COORDS);
