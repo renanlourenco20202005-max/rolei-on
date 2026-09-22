@@ -218,23 +218,154 @@ function PlaceDetail() {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
       >
         <div className="flex gap-2">
-          <button className="grid h-12 w-12 place-items-center rounded-2xl bg-muted">
+          <button
+            onClick={() => setRouteOpen(true)}
+            aria-label="Como chegar"
+            className="grid h-12 w-12 place-items-center rounded-2xl bg-muted active:scale-[0.98]"
+          >
             <Navigation className="h-5 w-5" />
           </button>
           <a
-            href={`https://wa.me/${place.whatsapp.replace(/\D/g, "")}`}
+            href={whatsappUrl}
             target="_blank"
             rel="noreferrer"
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-promo px-4 py-3 text-sm font-bold text-promo-foreground active:scale-[0.98]"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </a>
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.98]">
+          <button
+            onClick={() => setBookOpen(true)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.98]"
+          >
             Reservar mesa
           </button>
         </div>
       </div>
+
+      {routeOpen && (
+        <Sheet title="Como chegar" onClose={() => setRouteOpen(false)}>
+          <p className="text-xs text-muted-foreground">{place.address} · {place.distance} de você</p>
+          <div className="mt-4 space-y-2">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setRouteOpen(false)}
+              className="flex items-center gap-3 rounded-2xl bg-muted px-4 py-3 text-sm font-semibold active:scale-[0.99]"
+            >
+              <MapPin className="h-4.5 w-4.5 text-primary" /> Abrir no Google Maps
+            </a>
+            <a
+              href={wazeUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setRouteOpen(false)}
+              className="flex items-center gap-3 rounded-2xl bg-muted px-4 py-3 text-sm font-semibold active:scale-[0.99]"
+            >
+              <Navigation className="h-4.5 w-4.5 text-primary" /> Abrir no Waze
+            </a>
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(place.address);
+                  toast.success("Endereço copiado!");
+                } catch {
+                  toast.error("Não foi possível copiar o endereço.");
+                }
+                setRouteOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl bg-muted px-4 py-3 text-sm font-semibold active:scale-[0.99]"
+            >
+              <Tag className="h-4.5 w-4.5 text-primary" /> Copiar endereço
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {bookOpen && (
+        <Sheet title="Reservar mesa" onClose={() => setBookOpen(false)}>
+          <p className="text-xs text-muted-foreground">Enviamos seu pedido direto no WhatsApp de {place.name}.</p>
+          <div className="mt-4 space-y-3">
+            <Field label="Seu nome">
+              <input
+                value={bookName}
+                onChange={(e) => setBookName(e.target.value)}
+                placeholder="Como devemos chamar você?"
+                className="w-full rounded-xl bg-muted px-3 py-2.5 text-sm outline-none ring-primary/40 focus:ring-2"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Data">
+                <input
+                  type="date"
+                  value={bookDate}
+                  onChange={(e) => setBookDate(e.target.value)}
+                  className="w-full rounded-xl bg-muted px-3 py-2.5 text-sm outline-none ring-primary/40 focus:ring-2"
+                />
+              </Field>
+              <Field label="Horário">
+                <input
+                  type="time"
+                  value={bookTime}
+                  onChange={(e) => setBookTime(e.target.value)}
+                  className="w-full rounded-xl bg-muted px-3 py-2.5 text-sm outline-none ring-primary/40 focus:ring-2"
+                />
+              </Field>
+            </div>
+            <Field label="Pessoas">
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setBookPeople(n)}
+                    className={`h-9 min-w-9 rounded-xl px-3 text-sm font-semibold transition ${
+                      bookPeople === n ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </Field>
+            <button
+              onClick={sendBooking}
+              className="mt-1 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.98]"
+            >
+              Enviar pedido no WhatsApp
+            </button>
+          </div>
+        </Sheet>
+      )}
     </div>
+  );
+}
+
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-secondary/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-[480px] rounded-t-3xl bg-card p-5 shadow-card"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-base font-bold">{title}</h3>
+          <button onClick={onClose} aria-label="Fechar" className="grid h-8 w-8 place-items-center rounded-full bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+      {children}
+    </label>
   );
 }
 
