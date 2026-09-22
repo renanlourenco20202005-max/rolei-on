@@ -104,7 +104,11 @@ function PlaceDetail() {
             <ArrowLeft className="h-4.5 w-4.5" />
           </button>
           <div className="flex gap-2">
-            <button className="grid h-10 w-10 place-items-center rounded-full bg-card/95 backdrop-blur shadow-card">
+            <button
+              onClick={handleShare}
+              aria-label="Compartilhar lugar"
+              className="grid h-10 w-10 place-items-center rounded-full bg-card/95 backdrop-blur shadow-card"
+            >
               <Share2 className="h-4.5 w-4.5" />
             </button>
             <button
