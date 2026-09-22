@@ -80,7 +80,7 @@ export const savePartnerProfile = createServerFn({ method: "POST" })
           hours: data.hours,
           whatsapp: data.whatsapp,
           instagram: data.instagram,
-          price: data.price,
+          price_text: data.price,
           cover: data.cover,
           photos: data.photos,
           promos: data.promos,

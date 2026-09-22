@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790108231185,
+      "tag": "0000_add_partner_profile_location_and_price",
+      "breakpoints": true
+    }
+  ]
+}
